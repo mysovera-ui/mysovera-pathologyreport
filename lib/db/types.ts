@@ -50,6 +50,9 @@ export interface ReportDelivery {
   delivered_by: string | null;
   delivery_notes: string | null;
   delivered_at: string;
+  email_sent_at: string | null;
+  email_sent_to: string | null;
+  email_send_error: string | null;
 }
 
 export interface CustomerFeedback {

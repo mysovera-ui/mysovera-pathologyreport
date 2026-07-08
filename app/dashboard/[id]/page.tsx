@@ -6,6 +6,7 @@ import { StatusActions } from "./status-actions";
 import { PaymentToggle } from "./payment-toggle";
 import { DeliveryForm } from "./delivery-form";
 import { AiDraftPanel } from "./ai-draft-panel";
+import { SendEmailButton } from "./send-email-button";
 import type { ReportStatus, PaymentStatus } from "@/lib/db/types";
 
 export const dynamic = "force-dynamic";
@@ -195,6 +196,13 @@ export default async function SubmissionDetailPage({
                 >
                   Feedback link →
                 </Link>
+                <SendEmailButton
+                  submissionId={submission.id}
+                  customerEmail={submission.email}
+                  emailSentAt={deliveries[0].email_sent_at}
+                  emailSentTo={deliveries[0].email_sent_to}
+                  emailSendError={deliveries[0].email_send_error}
+                />
               </section>
             )}
           </div>
