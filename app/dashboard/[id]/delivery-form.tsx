@@ -5,7 +5,13 @@ import { deliverReportAction, type DeliverFormState } from "./actions";
 
 const initialState: DeliverFormState = {};
 
-export function DeliveryForm({ submissionId }: { submissionId: string }) {
+export function DeliveryForm({
+  submissionId,
+  defaultPdfUrl,
+}: {
+  submissionId: string;
+  defaultPdfUrl?: string | null;
+}) {
   const boundAction = deliverReportAction.bind(null, submissionId);
   const [state, formAction, pending] = useActionState(boundAction, initialState);
 
@@ -24,9 +30,13 @@ export function DeliveryForm({ submissionId }: { submissionId: string }) {
           name="pdf_url"
           type="text"
           required
+          defaultValue={defaultPdfUrl ?? ""}
           placeholder="https://…"
           className="w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm"
         />
+        {defaultPdfUrl && (
+          <p className="mt-1 text-xs text-neutral-400">Pre-filled from the generated PDF — edit if needed.</p>
+        )}
       </div>
       <div>
         <label className="block text-xs font-medium text-neutral-600 mb-1">

@@ -18,7 +18,7 @@ export async function submitReportAction(
   const ageRaw = String(formData.get("age") || "").trim();
   const gender = String(formData.get("gender") || "").trim();
   const health_concern = String(formData.get("health_concern") || "").trim();
-  const report_type = String(formData.get("report_type") || "").trim();
+  const report_panels = formData.getAll("report_panels").map((v) => String(v));
   const symptoms_notes = String(formData.get("symptoms_notes") || "").trim();
   // The file itself is uploaded client-side straight to Supabase Storage
   // (see submit/page.tsx) so it never passes through this server action's
@@ -30,7 +30,7 @@ export async function submitReportAction(
   const fieldErrors: Record<string, string> = {};
   if (!customer_name) fieldErrors.customer_name = "Name is required";
   if (!email || !email.includes("@")) fieldErrors.email = "A valid email is required";
-  if (!report_type) fieldErrors.report_type = "Please select a report type";
+  if (report_panels.length === 0) fieldErrors.report_panels = "Select at least one panel (or \"Other / Not Sure\")";
   if (!health_concern) fieldErrors.health_concern = "Tell us your concern in a few words";
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -49,7 +49,8 @@ export async function submitReportAction(
       age,
       gender: gender || null,
       health_concern,
-      report_type,
+      report_type: report_panels.join(", "),
+      report_panels,
       symptoms_notes: symptoms_notes || null,
       file_url,
       payment_status: "unpaid",

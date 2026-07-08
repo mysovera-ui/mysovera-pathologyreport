@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/db/audit";
-import { generateDraft } from "@/lib/ai/rules";
+import { generateStructuredReport, renderReportText } from "@/lib/ai/rules";
 import { revalidatePath } from "next/cache";
 import type { ReviewStatus } from "@/lib/db/types";
 
@@ -19,24 +19,39 @@ export async function generateAiDraftAction(
     return { error: "Please enter at least one marker value." };
   }
 
-  const result = generateDraft(markerInput);
+  const supabase = await createClient();
 
-  if (result.markersDetected.length === 0) {
-    return { error: "Please enter at least one marker value." };
+  const { data: submission } = await supabase
+    .from("report_submissions")
+    .select("customer_name")
+    .eq("id", submissionId)
+    .single();
+
+  const report = generateStructuredReport(markerInput, {
+    customerName: submission?.customer_name ?? undefined,
+  });
+
+  if (report.markersDetected.length === 0) {
+    return { error: "None of those markers were recognized. Check the format is like 'LDL: 4.8, HbA1c: 6.1'." };
   }
 
-  const supabase = await createClient();
+  const draftText = renderReportText(report, submission?.customer_name ?? undefined);
 
   const { error } = await supabase
     .from("report_submissions")
     .update({
       marker_input: markerInput,
-      ai_summary_draft: result.draft,
+      ai_summary_draft: draftText,
       ai_summary_source: "rule-based-v1",
-      ai_summary_confidence: result.confidence,
+      ai_summary_confidence: report.confidence,
       ai_summary_review_status: "unreviewed",
-      urgency_score: result.urgencyScore,
-      ai_risk_flags: result.riskFlags.join(", ") || null,
+      urgency_score: report.urgencyScore,
+      ai_risk_flags: report.riskFlags.join(", ") || null,
+      ai_structured_result: report,
+      // Regenerating the draft invalidates any previously generated PDF —
+      // the coach should regenerate the PDF from the fresh draft.
+      generated_pdf_url: null,
+      generated_pdf_generated_at: null,
     })
     .eq("id", submissionId);
 
@@ -50,7 +65,7 @@ export async function generateAiDraftAction(
     target_table: "report_submissions",
     target_id: submissionId,
     old_value: null,
-    new_value: `confidence=${result.confidence}, urgency=${result.urgencyScore}`,
+    new_value: `overallRisk=${report.overallRisk}, urgency=${report.urgencyScore}`,
   });
 
   revalidatePath(`/dashboard/${submissionId}`);

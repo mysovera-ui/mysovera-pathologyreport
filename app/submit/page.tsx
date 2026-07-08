@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { submitReportAction, type SubmitFormState } from "./actions";
-import { REPORT_TYPES } from "@/lib/db/types";
+import { PANEL_OPTIONS } from "@/lib/ai/rules";
 import { createClient } from "@/lib/supabase/client";
 
 const initialState: SubmitFormState = {};
@@ -106,17 +106,21 @@ export default function SubmitPage() {
             </Field>
           </div>
 
-          <Field label="Report type" error={state.fieldErrors?.report_type}>
-            <select name="report_type" required className="input" defaultValue="">
-              <option value="" disabled>
-                Select a report type
-              </option>
-              {REPORT_TYPES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
+          <Field
+            label="Which panels does your report cover? (select all that apply)"
+            error={state.fieldErrors?.report_panels}
+          >
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2 rounded-lg border border-neutral-300 bg-white p-3">
+              {PANEL_OPTIONS.map((p) => (
+                <label key={p.value} className="flex items-center gap-2 text-sm text-neutral-700">
+                  <input type="checkbox" name="report_panels" value={p.value} className="rounded" />
+                  {p.label}
+                </label>
               ))}
-            </select>
+            </div>
+            <p className="mt-1 text-xs text-neutral-400">
+              Not sure? Just tick &ldquo;Other / Not Sure&rdquo; — our team will confirm from your uploaded report.
+            </p>
           </Field>
 
           <Field

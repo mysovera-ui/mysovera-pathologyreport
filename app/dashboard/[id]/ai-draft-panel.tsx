@@ -7,6 +7,7 @@ import {
   setReviewStatusAction,
   type AiActionState,
 } from "./ai-actions";
+import { generatePdfAction } from "./pdf-actions";
 import type { ReportSubmission } from "@/lib/db/types";
 
 const initialState: AiActionState = {};
@@ -24,6 +25,8 @@ export function AiDraftPanel({ submission }: { submission: ReportSubmission }) {
   const [draftText, setDraftText] = useState(submission.ai_summary_draft ?? "");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, startSaving] = useTransition();
+  const [isGeneratingPdf, startGeneratingPdf] = useTransition();
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   const urgency = submission.urgency_score ?? 0;
   const urgencyColor =
@@ -42,11 +45,13 @@ export function AiDraftPanel({ submission }: { submission: ReportSubmission }) {
 
       <form action={formAction} className="space-y-2">
         <label className="block text-xs font-medium text-neutral-600">
-          Enter key marker values (e.g. LDL: 4.8, HDL: 1.1, HbA1c: 6.1)
+          Enter marker values from any panel — Hematology, Diabetes, Kidney, Liver,
+          Lipid, Thyroid, Tumor Markers, Vitamin D/B12, Iron Studies, Hormone, etc.
+          (e.g. LDL: 3.59, HbA1c: 5.8, TSH: 4.99, ESR: 22, Vitamin D: 60)
         </label>
         <textarea
           name="marker_input"
-          rows={2}
+          rows={4}
           defaultValue={submission.marker_input ?? ""}
           className="w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm"
         />
@@ -151,6 +156,43 @@ export function AiDraftPanel({ submission }: { submission: ReportSubmission }) {
               </button>
             </div>
           )}
+
+          <div className="mt-4 border-t border-neutral-100 pt-4">
+            <div className="flex items-center gap-2">
+              <button
+                disabled={isGeneratingPdf}
+                onClick={() => {
+                  setPdfError(null);
+                  startGeneratingPdf(async () => {
+                    const result = await generatePdfAction(submission.id);
+                    if (result.error) setPdfError(result.error);
+                  });
+                }}
+                className="rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-neutral-800 disabled:opacity-60"
+              >
+                {isGeneratingPdf
+                  ? "Generating PDF…"
+                  : submission.generated_pdf_url
+                  ? "Regenerate branded PDF"
+                  : "Generate branded PDF"}
+              </button>
+              {submission.generated_pdf_url && (
+                <a
+                  href={submission.generated_pdf_url}
+                  target="_blank"
+                  className="text-xs text-teal-700 hover:underline"
+                >
+                  View generated PDF →
+                </a>
+              )}
+            </div>
+            {pdfError && <p className="mt-1 text-xs text-red-600">{pdfError}</p>}
+            {submission.ai_summary_review_status === "unreviewed" && (
+              <p className="mt-1 text-xs text-amber-600">
+                Draft is unreviewed — approve or edit it above before sending this PDF to the customer.
+              </p>
+            )}
+          </div>
         </div>
       )}
     </section>

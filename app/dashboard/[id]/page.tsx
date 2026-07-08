@@ -171,7 +171,7 @@ export default async function SubmissionDetailPage({
             {submission.report_status === "completed" && (
               <section className="rounded-xl border border-neutral-200 bg-white p-6">
                 <h2 className="font-semibold text-neutral-900 mb-3">Deliver report</h2>
-                <DeliveryForm submissionId={submission.id} />
+                <DeliveryForm submissionId={submission.id} defaultPdfUrl={submission.generated_pdf_url} />
               </section>
             )}
 

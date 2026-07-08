@@ -36,6 +36,10 @@ export interface ReportSubmission {
   marker_input: string | null;
   urgency_score: number | null;
   ai_risk_flags: string | null;
+  report_panels: string[] | null;
+  ai_structured_result: unknown | null;
+  generated_pdf_url: string | null;
+  generated_pdf_generated_at: string | null;
 }
 
 export interface ReportDelivery {
