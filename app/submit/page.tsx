@@ -1,17 +1,55 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { submitReportAction, type SubmitFormState } from "./actions";
 import { REPORT_TYPES } from "@/lib/db/types";
+import { createClient } from "@/lib/supabase/client";
 
 const initialState: SubmitFormState = {};
+const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10MB
 
 export default function SubmitPage() {
   const [state, formAction, pending] = useActionState(
     submitReportAction,
     initialState,
   );
+  const [fileUrl, setFileUrl] = useState<string>("");
+  const [fileStatus, setFileStatus] = useState<
+    { kind: "idle" } | { kind: "uploading" } | { kind: "done"; name: string } | { kind: "error"; message: string }
+  >({ kind: "idle" });
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setFileUrl("");
+      setFileStatus({ kind: "idle" });
+      return;
+    }
+    if (file.size > MAX_FILE_BYTES) {
+      setFileStatus({ kind: "error", message: "That file is larger than 10MB. Please choose a smaller file." });
+      e.target.value = "";
+      setFileUrl("");
+      return;
+    }
+    setFileStatus({ kind: "uploading" });
+    const supabase = createClient();
+    const ext = file.name.split(".").pop() || "bin";
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage
+      .from("report-files")
+      .upload(path, file, { contentType: file.type || undefined });
+
+    if (error) {
+      console.error("upload error", error);
+      setFileStatus({ kind: "error", message: "Something went wrong uploading your file. Please try again." });
+      setFileUrl("");
+      return;
+    }
+    const { data } = supabase.storage.from("report-files").getPublicUrl(path);
+    setFileUrl(data.publicUrl);
+    setFileStatus({ kind: "done", name: file.name });
+  }
 
   return (
     <main className="min-h-screen bg-neutral-50 py-16 px-6">
@@ -100,19 +138,29 @@ export default function SubmitPage() {
 
           <Field label="Upload your report (PDF or image, max 10MB)">
             <input
-              name="file"
               type="file"
               accept=".pdf,.png,.jpg,.jpeg"
+              onChange={handleFileChange}
               className="input file:mr-3 file:rounded-md file:border-0 file:bg-teal-700 file:text-white file:px-3 file:py-1.5 file:text-sm"
             />
+            <input type="hidden" name="file_url" value={fileUrl} />
+            {fileStatus.kind === "uploading" && (
+              <span className="mt-1 block text-xs text-neutral-500">Uploading…</span>
+            )}
+            {fileStatus.kind === "done" && (
+              <span className="mt-1 block text-xs text-teal-700">✓ {fileStatus.name} uploaded</span>
+            )}
+            {fileStatus.kind === "error" && (
+              <span className="mt-1 block text-xs text-red-600">{fileStatus.message}</span>
+            )}
           </Field>
 
           <button
             type="submit"
-            disabled={pending}
+            disabled={pending || fileStatus.kind === "uploading"}
             className="w-full rounded-lg bg-teal-700 px-6 py-3 text-white font-semibold hover:bg-teal-800 disabled:opacity-60 transition-colors"
           >
-            {pending ? "Submitting…" : "Submit report"}
+            {pending ? "Submitting…" : fileStatus.kind === "uploading" ? "Uploading file…" : "Submit report"}
           </button>
         </form>
       </div>

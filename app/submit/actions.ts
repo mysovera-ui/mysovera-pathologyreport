@@ -9,8 +9,6 @@ export type SubmitFormState = {
   fieldErrors?: Record<string, string>;
 };
 
-const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10MB
-
 export async function submitReportAction(
   _prevState: SubmitFormState,
   formData: FormData,
@@ -22,7 +20,12 @@ export async function submitReportAction(
   const health_concern = String(formData.get("health_concern") || "").trim();
   const report_type = String(formData.get("report_type") || "").trim();
   const symptoms_notes = String(formData.get("symptoms_notes") || "").trim();
-  const file = formData.get("file") as File | null;
+  // The file itself is uploaded client-side straight to Supabase Storage
+  // (see submit/page.tsx) so it never passes through this server action's
+  // body — Vercel functions cap request bodies at ~4.5MB, well under the
+  // 10MB reports we need to accept. Only the resulting public URL crosses
+  // the server boundary.
+  const file_url = String(formData.get("file_url") || "").trim() || null;
 
   const fieldErrors: Record<string, string> = {};
   if (!customer_name) fieldErrors.customer_name = "Name is required";
@@ -37,29 +40,6 @@ export async function submitReportAction(
   const age = ageRaw ? parseInt(ageRaw, 10) : null;
 
   const supabase = await createClient();
-
-  let file_url: string | null = null;
-  if (file && file.size > 0) {
-    if (file.size > MAX_FILE_BYTES) {
-      return {
-        error: "That file is larger than 10MB. Please upload a smaller file.",
-      };
-    }
-    const ext = file.name.split(".").pop() || "bin";
-    const path = `${crypto.randomUUID()}.${ext}`;
-    const { error: uploadError } = await supabase.storage
-      .from("report-files")
-      .upload(path, file, { contentType: file.type || undefined });
-
-    if (uploadError) {
-      console.error("upload error", uploadError);
-      return { error: "Something went wrong uploading your file. Please try again." };
-    }
-    const { data: publicUrl } = supabase.storage
-      .from("report-files")
-      .getPublicUrl(path);
-    file_url = publicUrl.publicUrl;
-  }
 
   const { data, error } = await supabase
     .from("report_submissions")

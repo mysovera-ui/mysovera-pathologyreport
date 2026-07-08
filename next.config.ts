@@ -6,6 +6,15 @@ const nextConfig: NextConfig = {
   // so we don't let them block a deployment.
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
+
+  // Report uploads (PDF/image) can be up to 10MB (see docs/TEST_PLAN.md).
+  // Next.js defaults Server Action request bodies to 1MB, which rejects
+  // those uploads with a 413 before our own size check ever runs.
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
+  },
 };
 
 export default nextConfig;
