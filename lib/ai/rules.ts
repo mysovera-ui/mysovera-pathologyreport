@@ -3,10 +3,16 @@
 // ranges below are generalized adult ranges modeled on the sample report
 // format this app targets (Malaysian CPG-aligned general screening panel).
 // This NEVER produces a diagnosis — only educational, plain-language
-// context and generic lifestyle suggestions for a human coach to review,
-// edit, and approve before anything reaches a customer.
+// context (English + Bahasa Malaysia, matching the sample report's
+// bilingual style) and generic lifestyle suggestions for a human coach
+// to review, edit, and approve before anything reaches a customer.
 
 export type RiskLevel = "low" | "moderate" | "high" | "none";
+
+export interface Bilingual {
+  en: string;
+  bm: string;
+}
 
 export interface FindingResult {
   parameter: string;
@@ -15,6 +21,7 @@ export interface FindingResult {
   refRange?: string;
   flag?: string;
   sentence: string;
+  sentenceBM: string;
   status: "normal" | "flagged" | "info" | "unrecognized";
 }
 
@@ -23,28 +30,46 @@ export interface PanelResult {
   label: string;
   findings: FindingResult[];
   status: string;
+  statusBM: string;
   riskLevel: RiskLevel;
 }
 
 export interface KeyProblem {
   title: string;
   justification: string;
+  justificationBM: string;
   metricsToMonitor: string;
   riskLevel: RiskLevel;
 }
 
+export interface NutritionItem {
+  focus: string;
+  focusBM: string;
+  action: string;
+  actionBM: string;
+  target: string;
+  targetBM: string;
+}
+
+export interface SupplementItem {
+  name: string;
+  benefit: string;
+  benefitBM: string;
+}
+
 export interface Recommendations {
-  medical: string[];
-  nutrition: { focus: string; action: string; target: string }[];
-  supplements: { name: string; benefit: string }[];
-  workout: string[];
-  sleep: string[];
+  medical: Bilingual[];
+  nutrition: NutritionItem[];
+  supplements: SupplementItem[];
+  workout: Bilingual[];
+  sleep: Bilingual[];
 }
 
 export interface StructuredReport {
   panels: PanelResult[];
   overallRisk: RiskLevel;
   overallRiskReason: string;
+  overallRiskReasonBM: string;
   keyProblems: KeyProblem[];
   recommendations: Recommendations;
   markersDetected: string[];
@@ -55,17 +80,20 @@ export interface StructuredReport {
 
 type Kind = "numeric" | "qualitative";
 
+interface EvalResult {
+  flag?: string;
+  sentence: string;
+  sentenceBM: string;
+  status: "normal" | "flagged";
+  risk: RiskLevel;
+}
+
 interface ParamRule {
   match: RegExp;
   label: string;
   kind: Kind;
   refRange: string;
-  evaluate: (raw: string, numeric: number) => {
-    flag?: string;
-    sentence: string;
-    status: "normal" | "flagged";
-    risk: RiskLevel;
-  };
+  evaluate: (raw: string, numeric: number) => EvalResult;
 }
 
 interface PanelDef {
@@ -76,7 +104,7 @@ interface PanelDef {
 
 const QUAL_ABNORMAL = /^(positive|pos|trace|abnormal|high|present)$/i;
 
-function qualitativeNegativeRule(names: RegExp, label: string): ParamRule {
+function qualitativeNegativeRule(names: RegExp, label: string, labelBM: string): ParamRule {
   return {
     match: names,
     label,
@@ -87,12 +115,14 @@ function qualitativeNegativeRule(names: RegExp, label: string): ParamRule {
         return {
           flag: `${label} ${raw}`,
           sentence: `Your ${label} result came back "${raw}", which is outside the expected negative result and may need follow-up.`,
+          sentenceBM: `Keputusan ${labelBM} anda ialah "${raw}", di luar jangkaan (negatif) dan mungkin perlu susulan.`,
           status: "flagged",
           risk: "moderate",
         };
       }
       return {
         sentence: `Your ${label} result is negative, as expected.`,
+        sentenceBM: `Keputusan ${labelBM} anda adalah negatif, seperti dijangka.`,
         status: "normal",
         risk: "low",
       };
@@ -106,7 +136,15 @@ function rangeRule(
   unit: string,
   low: number | null,
   high: number | null,
-  opts?: { highRisk?: RiskLevel; lowRisk?: RiskLevel; highSentence?: string; lowSentence?: string },
+  opts?: {
+    highRisk?: RiskLevel;
+    lowRisk?: RiskLevel;
+    highSentence?: string;
+    highSentenceBM?: string;
+    lowSentence?: string;
+    lowSentenceBM?: string;
+    normalSentenceBM?: string;
+  },
 ): ParamRule {
   const refRange =
     low !== null && high !== null
@@ -128,6 +166,9 @@ function rangeRule(
           sentence:
             opts?.highSentence ??
             `Your ${label} of ${v} ${unit} is above the typical range (${refRange}).`,
+          sentenceBM:
+            opts?.highSentenceBM ??
+            `${label} anda (${v} ${unit}) melebihi julat biasa (${refRange}).`,
           status: "flagged",
           risk: opts?.highRisk ?? "moderate",
         };
@@ -138,12 +179,18 @@ function rangeRule(
           sentence:
             opts?.lowSentence ??
             `Your ${label} of ${v} ${unit} is below the typical range (${refRange}).`,
+          sentenceBM:
+            opts?.lowSentenceBM ??
+            `${label} anda (${v} ${unit}) di bawah julat biasa (${refRange}).`,
           status: "flagged",
           risk: opts?.lowRisk ?? "moderate",
         };
       }
       return {
         sentence: `Your ${label} of ${v} ${unit} is within the typical range (${refRange}).`,
+        sentenceBM:
+          opts?.normalSentenceBM ??
+          `${label} anda (${v} ${unit}) berada dalam julat biasa (${refRange}).`,
         status: "normal",
         risk: "low",
       };
@@ -157,8 +204,8 @@ const PANELS: PanelDef[] = [
     label: "Hematology (Blood)",
     rules: [
       rangeRule(/^(haemoglobin|hemoglobin|hb)$/i, "Haemoglobin", "g/L", 120, 150, {
-        lowSentence:
-          "Your haemoglobin is below the typical range, which can be a sign of anaemia.",
+        lowSentence: "Your haemoglobin is below the typical range, which can be a sign of anaemia.",
+        lowSentenceBM: "Haemoglobin anda di bawah julat biasa, yang boleh menjadi tanda anemia.",
         lowRisk: "moderate",
       }),
       rangeRule(/^rbc$/i, "RBC (red cell count)", "x10¹²/L", 4.0, 5.4),
@@ -180,6 +227,8 @@ const PANELS: PanelDef[] = [
         highRisk: "moderate",
         highSentence:
           "Your ESR is mildly elevated — a general, non-specific marker of inflammation. It often needs correlation with symptoms (fever, joint pain, prolonged cough) rather than acting on its own.",
+        highSentenceBM:
+          "ESR anda sedikit tinggi — penanda keradangan yang tidak spesifik. Biasanya perlu dikaitkan dengan simptom (demam, sakit sendi, batuk berpanjangan) untuk tafsiran yang tepat.",
       }),
     ],
   },
@@ -191,6 +240,8 @@ const PANELS: PanelDef[] = [
         highRisk: "moderate",
         highSentence:
           "Your fasting glucose is above the typical range, which can indicate prediabetes (6.1–6.9 mmol/L) or diabetes (>= 7.0 mmol/L) depending on how high — best discussed with your doctor.",
+        highSentenceBM:
+          "Gula puasa anda melebihi julat biasa, yang boleh menunjukkan pra-diabetes (6.1–6.9 mmol/L) atau diabetes (>= 7.0 mmol/L) bergantung tahap — sila rujuk doktor.",
       }),
       {
         match: /^hba1c$/i,
@@ -202,6 +253,7 @@ const PANELS: PanelDef[] = [
             return {
               flag: "HbA1c diabetes range",
               sentence: `Your HbA1c of ${v}% is in the diabetes range (>= 6.3%). This is a signal to talk to your doctor soon.`,
+              sentenceBM: `HbA1c anda (${v}%) berada dalam julat diabetes (>= 6.3%). Ini adalah tanda untuk berjumpa doktor tidak lama lagi.`,
               status: "flagged",
               risk: "high",
             };
@@ -210,12 +262,14 @@ const PANELS: PanelDef[] = [
             return {
               flag: "HbA1c pre-diabetes range",
               sentence: `Your HbA1c of ${v}% places you in the pre-diabetes range (5.7–6.2%). This does not mean you have diabetes, but it's a signal to make lifestyle changes now.`,
+              sentenceBM: `HbA1c anda (${v}%) berada dalam julat pra-diabetes (5.7–6.2%). Ini tidak bermaksud anda menghidap diabetes, tetapi ia adalah tanda untuk membuat perubahan gaya hidup sekarang.`,
               status: "flagged",
               risk: "moderate",
             };
           }
           return {
             sentence: `Your HbA1c of ${v}% is within the normal range (<5.7%).`,
+            sentenceBM: `HbA1c anda (${v}%) berada dalam julat normal (<5.7%).`,
             status: "normal",
             risk: "low",
           };
@@ -232,8 +286,8 @@ const PANELS: PanelDef[] = [
       rangeRule(/^chloride$/i, "Chloride", "mmol/L", 95, 110),
       rangeRule(/^urea$/i, "Urea", "mmol/L", 2.5, 8.0),
       rangeRule(/^creatinine$/i, "Creatinine", "µmol/L", 40, 80, {
-        highSentence:
-          "Your creatinine is higher than typical, which can be a sign your kidneys are working harder than usual.",
+        highSentence: "Your creatinine is higher than typical, which can be a sign your kidneys are working harder than usual.",
+        highSentenceBM: "Kreatinin anda lebih tinggi daripada biasa, yang boleh menjadi tanda buah pinggang anda bekerja lebih kuat.",
       }),
       {
         match: /^egfr$/i,
@@ -245,6 +299,7 @@ const PANELS: PanelDef[] = [
             return {
               flag: "eGFR reduced",
               sentence: `Your eGFR of ${v} is below 60, a level that can indicate reduced kidney function and usually warrants medical follow-up.`,
+              sentenceBM: `eGFR anda (${v}) di bawah 60, tahap yang boleh menunjukkan fungsi buah pinggang menurun dan biasanya memerlukan susulan doktor.`,
               status: "flagged",
               risk: "high",
             };
@@ -253,12 +308,14 @@ const PANELS: PanelDef[] = [
             return {
               flag: "eGFR mildly reduced",
               sentence: `Your eGFR of ${v} is mildly below the typical >90 range.`,
+              sentenceBM: `eGFR anda (${v}) sedikit di bawah julat biasa (>90).`,
               status: "flagged",
               risk: "moderate",
             };
           }
           return {
             sentence: `Your eGFR of ${v} is within the normal range (>90).`,
+            sentenceBM: `eGFR anda (${v}) berada dalam julat normal (>90).`,
             status: "normal",
             risk: "low",
           };
@@ -282,12 +339,12 @@ const PANELS: PanelDef[] = [
       rangeRule(/^total bilirubin$/i, "Total Bilirubin", "µmol/L", null, 21.0),
       rangeRule(/^ggt$/i, "GGT", "U/L", null, 51),
       rangeRule(/^ast$/i, "AST", "U/L", null, 41, {
-        highSentence:
-          "Your AST is higher than typical, which can indicate the liver is under some stress.",
+        highSentence: "Your AST is higher than typical, which can indicate the liver is under some stress.",
+        highSentenceBM: "AST anda lebih tinggi daripada biasa, yang boleh menunjukkan hati sedang tertekan.",
       }),
       rangeRule(/^alt$/i, "ALT", "U/L", null, 51, {
-        highSentence:
-          "Your ALT is higher than typical, which can indicate the liver is under some stress.",
+        highSentence: "Your ALT is higher than typical, which can indicate the liver is under some stress.",
+        highSentenceBM: "ALT anda lebih tinggi daripada biasa, yang boleh menunjukkan hati sedang tertekan.",
       }),
     ],
   },
@@ -297,29 +354,36 @@ const PANELS: PanelDef[] = [
     rules: [
       rangeRule(/^(total cholesterol|cholesterol|total chol)$/i, "Total Cholesterol", "mmol/L", null, 5.2, {
         highRisk: "high",
+        highSentenceBM: "Jumlah kolesterol anda melebihi julat biasa (<5.2 mmol/L).",
       }),
       rangeRule(/^(triglycerides?|trig)$/i, "Triglycerides", "mmol/L", null, 1.7),
       rangeRule(/^hdl(-c)?$/i, "HDL (good cholesterol)", "mmol/L", 1.2, null, {
         lowRisk: "moderate",
         lowSentence: "Your HDL (good cholesterol) is lower than recommended.",
+        lowSentenceBM: "HDL (kolesterol baik) anda lebih rendah daripada disyorkan.",
       }),
       rangeRule(/^ldl(-c)?$/i, "LDL (bad cholesterol)", "mmol/L", null, 2.6, {
         highRisk: "high",
         highSentence:
           "Your LDL (bad cholesterol) is above the recommended level. This means fatty deposits may build up in your arteries over time — LDL is the main target for heart disease/stroke prevention.",
+        highSentenceBM:
+          "LDL (kolesterol jahat) anda melebihi tahap yang disyorkan. Ini bermakna lemak boleh terkumpul dalam salur darah dari semasa ke semasa — LDL ialah sasaran utama pencegahan penyakit jantung/strok.",
       }),
-      rangeRule(/^non-?hdl$/i, "Non-HDL Cholesterol", "mmol/L", null, 3.4, { highRisk: "high" }),
+      rangeRule(/^non-?hdl$/i, "Non-HDL Cholesterol", "mmol/L", null, 3.4, {
+        highRisk: "high",
+        highSentenceBM: "Non-HDL kolesterol anda melebihi julat biasa (<3.4 mmol/L).",
+      }),
     ],
   },
   {
     key: "urinalysis",
     label: "Urinalysis (FEME Urine)",
     rules: [
-      qualitativeNegativeRule(/^leukocytes?$/i, "Leukocytes"),
-      qualitativeNegativeRule(/^blood$/i, "Blood"),
-      qualitativeNegativeRule(/^nitrite$/i, "Nitrite"),
-      qualitativeNegativeRule(/^ketones?$/i, "Ketones"),
-      qualitativeNegativeRule(/^(protein)$/i, "Protein (urine)"),
+      qualitativeNegativeRule(/^leukocytes?$/i, "Leukocytes", "Leukosit"),
+      qualitativeNegativeRule(/^blood$/i, "Blood", "Darah"),
+      qualitativeNegativeRule(/^nitrite$/i, "Nitrite", "Nitrit"),
+      qualitativeNegativeRule(/^ketones?$/i, "Ketones", "Keton"),
+      qualitativeNegativeRule(/^(protein)$/i, "Protein (urine)", "Protein (air kencing)"),
       rangeRule(/^(specific gravity)$/i, "Specific Gravity", "", 1.003, 1.035),
       rangeRule(/^ph$/i, "Urine pH", "", 5.0, 9.0),
     ],
@@ -334,6 +398,8 @@ const PANELS: PanelDef[] = [
         highRisk: "moderate",
         highSentence:
           "Your TSH is above the typical range. Combined with a normal FT4, this pattern can support subclinical hypothyroidism (an early/mild underactive thyroid), which can also affect cholesterol levels — usually worth a doctor's follow-up (repeat TSH/FT4, thyroid antibodies if needed).",
+        highSentenceBM:
+          "TSH anda melebihi julat biasa. Digabungkan dengan FT4 yang normal, corak ini boleh menyokong hipotiroid subklinikal (tiroid kurang aktif peringkat awal/ringan), yang juga boleh mempengaruhi paras kolesterol — biasanya perlu susulan doktor (ulang TSH/FT4, antibodi tiroid jika perlu).",
       }),
     ],
   },
@@ -351,9 +417,7 @@ const PANELS: PanelDef[] = [
   {
     key: "h_pylori",
     label: "H. pylori Serology",
-    rules: [
-      rangeRule(/^(h\.? ?pylori( igg)?( ab)?|hpylori)$/i, "H. pylori IgG", "index", null, 0.8),
-    ],
+    rules: [rangeRule(/^(h\.? ?pylori( igg)?( ab)?|hpylori)$/i, "H. pylori IgG", "index", null, 0.8)],
   },
   {
     key: "vitamin_d",
@@ -369,6 +433,7 @@ const PANELS: PanelDef[] = [
             return {
               flag: "Vitamin D deficiency",
               sentence: `Your Vitamin D of ${v} nmol/L is in the deficiency range (<= 50), which can affect bone/muscle health and general wellbeing.`,
+              sentenceBM: `Vitamin D anda (${v} nmol/L) berada dalam julat kekurangan (<= 50), yang boleh menjejaskan kesihatan tulang/otot dan kesejahteraan umum.`,
               status: "flagged",
               risk: "moderate",
             };
@@ -377,12 +442,14 @@ const PANELS: PanelDef[] = [
             return {
               flag: "Vitamin D insufficient",
               sentence: `Your Vitamin D of ${v} nmol/L is insufficient (51–74), below the sufficient range.`,
+              sentenceBM: `Vitamin D anda (${v} nmol/L) tidak mencukupi (51–74), di bawah julat mencukupi.`,
               status: "flagged",
               risk: "moderate",
             };
           }
           return {
             sentence: `Your Vitamin D of ${v} nmol/L is in the sufficient range (75–350).`,
+            sentenceBM: `Vitamin D anda (${v} nmol/L) berada dalam julat mencukupi (75–350).`,
             status: "normal",
             risk: "low",
           };
@@ -403,10 +470,7 @@ const PANELS: PanelDef[] = [
       rangeRule(/^transferrin$/i, "Transferrin", "g/L", 1.8, 2.7),
       rangeRule(/^tibc$/i, "TIBC", "µmol/L", 45.0, 70.0),
       rangeRule(/^saturation$/i, "Saturation", "%", 13, 51),
-      rangeRule(/^ferritin$/i, "Ferritin", "µg/L", 13, 51, {
-        highRisk: "low",
-        lowRisk: "moderate",
-      }),
+      rangeRule(/^ferritin$/i, "Ferritin", "µg/L", 13, 51, { highRisk: "low", lowRisk: "moderate" }),
     ],
   },
   {
@@ -420,6 +484,7 @@ const PANELS: PanelDef[] = [
         refRange: "Depends on menstrual cycle phase",
         evaluate: (_raw, v) => ({
           sentence: `FSH recorded at ${v} IU/L. Interpretation depends on menstrual cycle phase and menopause status — clinical correlation needed.`,
+          sentenceBM: `FSH direkodkan pada ${v} IU/L. Tafsiran bergantung kepada fasa kitaran haid dan status menopaus — perlu korelasi klinikal.`,
           status: "normal",
           risk: "none",
         }),
@@ -431,6 +496,7 @@ const PANELS: PanelDef[] = [
         refRange: "Depends on menstrual cycle phase",
         evaluate: (_raw, v) => ({
           sentence: `LH recorded at ${v} IU/L. Interpretation depends on menstrual cycle phase — clinical correlation needed.`,
+          sentenceBM: `LH direkodkan pada ${v} IU/L. Tafsiran bergantung kepada fasa kitaran haid — perlu korelasi klinikal.`,
           status: "normal",
           risk: "none",
         }),
@@ -442,6 +508,7 @@ const PANELS: PanelDef[] = [
         refRange: "Depends on menstrual cycle phase",
         evaluate: (_raw, v) => ({
           sentence: `Estradiol recorded at ${v} pmol/L. Interpretation depends on cycle day and symptoms (hot flushes, irregular periods, etc.) — clinical correlation needed.`,
+          sentenceBM: `Estradiol direkodkan pada ${v} pmol/L. Tafsiran bergantung kepada hari kitaran dan simptom (panas badan, haid tidak teratur, dll) — perlu korelasi klinikal.`,
           status: "normal",
           risk: "none",
         }),
@@ -474,60 +541,85 @@ function riskRank(r: RiskLevel): number {
 
 const RECOMMENDATION_LIBRARY: Record<
   string,
-  { medical?: string; nutrition?: Recommendations["nutrition"][number]; supplement?: Recommendations["supplements"][number] }
+  { medical?: Bilingual; nutrition?: NutritionItem; supplement?: SupplementItem }
 > = {
   lipid: {
-    medical:
-      "Discuss overall cardiovascular risk with your doctor, including whether cholesterol-lowering treatment is appropriate given your medical history, blood pressure, and other risk factors.",
+    medical: {
+      en: "Discuss overall cardiovascular risk with your doctor, including whether cholesterol-lowering treatment is appropriate given your medical history, blood pressure, and other risk factors.",
+      bm: "Bincangkan risiko kardiovaskular keseluruhan dengan doktor anda, termasuk sama ada rawatan penurun kolesterol sesuai berdasarkan sejarah perubatan, tekanan darah, dan faktor risiko lain.",
+    },
     nutrition: {
       focus: "High LDL / Total Cholesterol",
+      focusBM: "LDL / Jumlah Kolesterol Tinggi",
       action:
         "Reduce saturated and trans fats; increase soluble fibre (vegetables, oats, legumes); choose lean protein sources.",
+      actionBM:
+        "Kurangkan lemak tepu & trans; tambah serat larut (sayur, oat, kekacang); pilih sumber protein tanpa lemak.",
       target: "Lower LDL and Non-HDL cholesterol",
+      targetBM: "Turunkan LDL dan Non-HDL kolesterol",
     },
     supplement: {
       name: "Omega-3 (if suitable)",
       benefit: "May support heart health and lipid profile, particularly if triglycerides are elevated.",
+      benefitBM: "Boleh menyokong kesihatan jantung dan profil lipid, terutamanya jika trigliserida tinggi.",
     },
   },
   diabetes: {
-    medical:
-      "Discuss your blood sugar trend with your doctor — periodic HbA1c monitoring and lifestyle changes are typically advised for pre-diabetes.",
+    medical: {
+      en: "Discuss your blood sugar trend with your doctor — periodic HbA1c monitoring and lifestyle changes are typically advised for pre-diabetes.",
+      bm: "Bincangkan trend gula darah anda dengan doktor — pemantauan HbA1c berkala dan perubahan gaya hidup biasanya disyorkan untuk pra-diabetes.",
+    },
     nutrition: {
       focus: "Pre-diabetes / elevated blood sugar",
-      action:
-        "Limit refined carbohydrates and sugary foods; choose higher-fibre carbohydrate sources; moderate portion sizes.",
+      focusBM: "Pra-diabetes / gula darah tinggi",
+      action: "Limit refined carbohydrates and sugary foods; choose higher-fibre carbohydrate sources; moderate portion sizes.",
+      actionBM: "Kurangkan karbohidrat ringkas & makanan manis; pilih karbohidrat berserat; kawal saiz hidangan.",
       target: "Stabilize HbA1c",
+      targetBM: "Stabilkan HbA1c",
     },
   },
   thyroid: {
-    medical:
-      "Discuss your TSH result with your doctor — they may recommend repeat testing or thyroid antibody tests to clarify subclinical thyroid changes.",
+    medical: {
+      en: "Discuss your TSH result with your doctor — they may recommend repeat testing or thyroid antibody tests to clarify subclinical thyroid changes.",
+      bm: "Bincangkan keputusan TSH anda dengan doktor — mereka mungkin mencadangkan ujian ulangan atau ujian antibodi tiroid untuk mengesahkan perubahan tiroid subklinikal.",
+    },
   },
   vitamin_d: {
     nutrition: {
       focus: "Vitamin D insufficiency",
+      focusBM: "Vitamin D tidak mencukupi",
       action: "Increase appropriate dietary sources and safe sun exposure.",
+      actionBM: "Tingkatkan sumber makanan sesuai dan pendedahan cahaya matahari secara selamat.",
       target: "Reach sufficient Vitamin D levels",
+      targetBM: "Capai tahap Vitamin D yang mencukupi",
     },
     supplement: {
       name: "Vitamin D",
       benefit: "Supports bone, muscle, and immune health.",
+      benefitBM: "Menyokong kesihatan tulang, otot, dan imun.",
     },
   },
   hematology: {
     nutrition: {
       focus: "Mild inflammation marker (ESR)",
+      focusBM: "Penanda keradangan ringan (ESR)",
       action: "Maintain a balanced diet, stay well hydrated, and monitor symptoms.",
+      actionBM: "Kekalkan pemakanan seimbang, cukup hidrasi, dan pantau simptom.",
       target: "Normalize inflammation markers",
+      targetBM: "Normalisasi penanda keradangan",
     },
   },
   kidney: {
-    medical:
-      "Discuss your kidney function results with your doctor, especially if this is a new or persistent finding.",
+    medical: {
+      en: "Discuss your kidney function results with your doctor, especially if this is a new or persistent finding.",
+      bm: "Bincangkan keputusan fungsi buah pinggang anda dengan doktor, terutamanya jika ini penemuan baharu atau berterusan.",
+    },
   },
   iron_studies: {
-    medical: "Discuss your iron study results with your doctor if you have symptoms of fatigue or anaemia.",
+    medical: {
+      en: "Discuss your iron study results with your doctor if you have symptoms of fatigue or anaemia.",
+      bm: "Bincangkan keputusan kajian zat besi anda dengan doktor jika anda mempunyai simptom keletihan atau anemia.",
+    },
   },
 };
 
@@ -557,6 +649,7 @@ export function generateStructuredReport(
           rawValue: raw,
           refRange: rule.refRange,
           sentence: `${rule.label}: "${raw}" could not be read as a number — please re-check this value.`,
+          sentenceBM: `${rule.label}: "${raw}" tidak dapat dibaca sebagai nombor — sila semak semula nilai ini.`,
           status: "unrecognized",
         });
         continue;
@@ -573,6 +666,7 @@ export function generateStructuredReport(
         refRange: rule.refRange,
         flag: evaluated.flag,
         sentence: evaluated.sentence,
+        sentenceBM: evaluated.sentenceBM,
         status: evaluated.status,
       });
     }
@@ -587,14 +681,13 @@ export function generateStructuredReport(
         ? "high"
         : "moderate";
 
+    const flaggedNames = flaggedFindings.map((f) => f.parameter).join(", ");
     panels.push({
       key: panelDef.key,
       label: panelDef.label,
       findings,
-      status:
-        flaggedFindings.length === 0
-          ? "Generally normal"
-          : `Generally normal, ${flaggedFindings.map((f) => f.parameter).join(", ")} flagged`,
+      status: flaggedFindings.length === 0 ? "Generally normal" : `Generally normal, ${flaggedNames} flagged`,
+      statusBM: flaggedFindings.length === 0 ? "Umumnya normal" : `Umumnya normal, ${flaggedNames} ditandakan`,
       riskLevel: panelRisk,
     });
   }
@@ -613,22 +706,18 @@ export function generateStructuredReport(
     .sort((a, b) => riskRank(b.riskLevel) - riskRank(a.riskLevel));
 
   const keyProblems: KeyProblem[] = flaggedPanels.slice(0, 6).map((p) => {
-    const flaggedNames = p.findings.filter((f) => f.status === "flagged").map((f) => f.parameter);
+    const flaggedFindings = p.findings.filter((f) => f.status === "flagged");
+    const flaggedNames = flaggedFindings.map((f) => f.parameter);
     return {
       title: `${flaggedNames.join(", ")} (${p.label})`,
-      justification: p.findings.find((f) => f.status === "flagged")?.sentence ?? "",
+      justification: flaggedFindings[0]?.sentence ?? "",
+      justificationBM: flaggedFindings[0]?.sentenceBM ?? "",
       metricsToMonitor: flaggedNames.join(", "),
       riskLevel: p.riskLevel,
     };
   });
 
-  const recommendations: Recommendations = {
-    medical: [],
-    nutrition: [],
-    supplements: [],
-    workout: [],
-    sleep: [],
-  };
+  const recommendations: Recommendations = { medical: [], nutrition: [], supplements: [], workout: [], sleep: [] };
 
   for (const p of flaggedPanels) {
     const lib = RECOMMENDATION_LIBRARY[p.key];
@@ -639,12 +728,14 @@ export function generateStructuredReport(
   }
 
   if (flaggedPanels.length > 0) {
-    recommendations.workout.push(
-      "Regular physical activity suited to age and fitness level (e.g. a mix of light-to-moderate cardio and basic strength training) — discuss with your doctor before starting a new routine if you have existing conditions.",
-    );
-    recommendations.sleep.push(
-      "Keep a consistent sleep schedule, avoid caffeine late in the day, and build in simple relaxation habits (slow breathing, light stretching).",
-    );
+    recommendations.workout.push({
+      en: "Regular physical activity suited to age and fitness level (e.g. a mix of light-to-moderate cardio and basic strength training) — discuss with your doctor before starting a new routine if you have existing conditions.",
+      bm: "Aktiviti fizikal berkala mengikut kemampuan umur & kesihatan (contoh: gabungan kardio ringan-sederhana + latihan kekuatan asas) — berbincang dengan doktor sebelum memulakan rutin baharu jika ada keadaan sedia ada.",
+    });
+    recommendations.sleep.push({
+      en: "Keep a consistent sleep schedule, avoid caffeine late in the day, and build in simple relaxation habits (slow breathing, light stretching).",
+      bm: "Tidur konsisten setiap hari, elakkan kafein lewat petang/malam, dan amalkan aktiviti ringkas untuk relaks (pernafasan perlahan, regangan ringan).",
+    });
   }
 
   const confidence = recognizedCount > 0 ? Math.min(0.95, 0.55 + recognizedCount * 0.03) : 0;
@@ -657,6 +748,10 @@ export function generateStructuredReport(
       flaggedPanels.length > 0
         ? `Main driver(s): ${flaggedPanels.map((p) => p.label).join("; ")}.`
         : "All entered markers are within typical ranges.",
+    overallRiskReasonBM:
+      flaggedPanels.length > 0
+        ? `Punca utama: ${flaggedPanels.map((p) => p.label).join("; ")}.`
+        : "Semua penanda yang dimasukkan berada dalam julat biasa.",
     keyProblems,
     recommendations,
     markersDetected,
@@ -668,8 +763,6 @@ export function generateStructuredReport(
 
 export function renderReportText(report: StructuredReport, customerName?: string): string {
   const lines: string[] = [];
-  const name = customerName ? customerName.split(" ")[0] : "there";
-
   lines.push(`CLINICAL HEALTH REPORT SUMMARY — ${customerName ?? ""}`.trim());
   lines.push("");
   lines.push(`Overall Status: ${report.overallRisk.toUpperCase()}`);
@@ -705,7 +798,7 @@ export function renderReportText(report: StructuredReport, customerName?: string
     lines.push("=== RECOMMENDATIONS (AI-suggested — coach must review before sending) ===");
     if (rec.medical.length) {
       lines.push("Medical:");
-      rec.medical.forEach((m) => lines.push(`  • ${m}`));
+      rec.medical.forEach((m) => lines.push(`  • ${m.en}`));
     }
     if (rec.nutrition.length) {
       lines.push("Nutrition (3-month focus):");
@@ -717,11 +810,11 @@ export function renderReportText(report: StructuredReport, customerName?: string
     }
     if (rec.workout.length) {
       lines.push("Activity:");
-      rec.workout.forEach((w) => lines.push(`  • ${w}`));
+      rec.workout.forEach((w) => lines.push(`  • ${w.en}`));
     }
     if (rec.sleep.length) {
       lines.push("Sleep & Stress:");
-      rec.sleep.forEach((s) => lines.push(`  • ${s}`));
+      rec.sleep.forEach((s) => lines.push(`  • ${s.en}`));
     }
     lines.push("");
   }
