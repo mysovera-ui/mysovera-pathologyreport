@@ -34,6 +34,12 @@ export default async function DashboardPage() {
               All report submissions, newest first.
             </p>
           </div>
+          <Link
+            href="/dashboard/feedback"
+            className="text-sm font-medium text-teal-700 hover:underline whitespace-nowrap"
+          >
+            View customer feedback →
+          </Link>
         </div>
 
         {error && (
