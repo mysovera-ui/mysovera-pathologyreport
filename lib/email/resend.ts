@@ -13,7 +13,7 @@ function getClient(): Resend {
   return new Resend(key);
 }
 
-const FROM_ADDRESS = process.env.RESEND_FROM_EMAIL || "Health Bridge Solution <onboarding@resend.dev>";
+const FROM_ADDRESS = process.env.RESEND_FROM_EMAIL || "Health Bridge Solution <report@healthbridgesolution.my>";
 
 export function deliveryEmailHtml({
   customerName,
