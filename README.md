@@ -41,3 +41,5 @@ See [CLAUDE.md](CLAUDE.md) for conventions. This repo is pre-wired for gstack â€
 If you need Postgres without Supabase (e.g. prefer Drizzle ORM + Clerk for auth), a `vibe-stack-neon` variant is planned. For now: fork this and swap `@supabase/ssr` for `drizzle-orm` + `@neondatabase/serverless`, add Clerk or NextAuth.
 
 <!-- trigger redeploy 2026-07-08T06:54:40Z -->
+
+<!-- redeploy: pick up RESEND_API_KEY 2026-07-09T02:27:00Z -->
