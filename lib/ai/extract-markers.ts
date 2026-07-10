@@ -60,11 +60,20 @@ Rules:
 ${KNOWN_PARAMETERS}
 - If a test on the page isn't in that list, still include it using the name printed on the report, in case it's useful, but prioritize accuracy over completeness.
 - Only output the numeric or qualitative RESULT value, not the reference range (e.g. "HbA1c: 6.1" not "HbA1c: 6.1 (Normal <5.7%)").
-- Use plain numbers without units in the value (e.g. "Haemoglobin: 138" not "Haemoglobin: 138 g/L").
+- Use plain numbers without units in the value (e.g. "Haemoglobin: 138" not "Haemoglobin: 138 g/L") — but see the unit-conversion rule below first.
+- Unit conversion — this system always expects Haemoglobin and MCHC in g/L. Many lab reports (especially Malaysian hospital
+  printouts) report these in g/dL instead. If the source shows g/dL, multiply the value by 10 before outputting it
+  (e.g. a printed "Haemoglobin 14.4 g/dL" must be output as "Haemoglobin: 144", not "Haemoglobin: 14.4" — outputting the
+  raw 14.4 would be read as a severely abnormal g/L value and is wrong). Always check the unit column next to the result,
+  don't assume.
+- For the WBC differential (Neutrophils, Lymphocytes, Monocytes, Eosinophils, Basophils), reports often print both a
+  percentage (%) column and an absolute count column (labelled e.g. "Neutrophil count", usually in x10^9/L or the
+  equivalent x10^3/uL — same number, no conversion needed). Always use the absolute COUNT column, never the percentage.
 - For qualitative urinalysis results use exactly one word: Negative, Positive, or Trace.
 - If you cannot read a value confidently, skip that line rather than guessing.
 - If there are multiple pages/images, combine everything into one flat list with no duplicate parameters (if a parameter appears more than once, use the clearest/most recent reading).
 - Be careful not to confuse a parameter with a related ratio or derived value printed nearby (e.g. "HDL Cholesterol" is not the same as "Cholesterol/HDL Ratio" or "Non-HDL Cholesterol" — only use the exact parameter, not a ratio calculated from it).
+- Some pages may be clinical documents rather than lab results (e.g. a hospital discharge summary, an imaging/MRI screenshot). These do not contain "Parameter: value" lab data — skip them entirely rather than inventing values, and do not treat a diagnosis or clinical note as a lab result.
 - Do not include patient name, age, dates, lab name, or any other non-test-result information.`;
 
 export interface ExtractResult {

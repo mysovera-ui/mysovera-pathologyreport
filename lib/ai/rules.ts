@@ -528,7 +528,7 @@ export function parseMarkers(input: string): { key: string; raw: string }[] {
   const results: { key: string; raw: string }[] = [];
   const pairs = input.split(/[,\n]/);
   for (const pair of pairs) {
-    const m = pair.match(/([A-Za-z][A-Za-z0-9 ./]*?)\s*[:=]\s*([A-Za-z0-9.+-]+)/);
+    const m = pair.match(/([A-Za-z][A-Za-z0-9 ./-]*?)\s*[:=]\s*([A-Za-z0-9.+-]+)/);
     if (m) {
       results.push({ key: m[1].trim(), raw: m[2].trim() });
     }
