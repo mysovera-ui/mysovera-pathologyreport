@@ -64,6 +64,7 @@ ${KNOWN_PARAMETERS}
 - For qualitative urinalysis results use exactly one word: Negative, Positive, or Trace.
 - If you cannot read a value confidently, skip that line rather than guessing.
 - If there are multiple pages/images, combine everything into one flat list with no duplicate parameters (if a parameter appears more than once, use the clearest/most recent reading).
+- Be careful not to confuse a parameter with a related ratio or derived value printed nearby (e.g. "HDL Cholesterol" is not the same as "Cholesterol/HDL Ratio" or "Non-HDL Cholesterol" — only use the exact parameter, not a ratio calculated from it).
 - Do not include patient name, age, dates, lab name, or any other non-test-result information.`;
 
 export interface ExtractResult {

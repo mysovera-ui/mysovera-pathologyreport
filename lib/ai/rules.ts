@@ -636,7 +636,11 @@ export function generateStructuredReport(
   let recognizedCount = 0;
 
   for (const panelDef of PANELS) {
-    const findings: FindingResult[] = [];
+    // Keyed by rule so that if the same parameter appears more than once in
+    // the input (e.g. duplicate lines from OCR/AI extraction, or a repeated
+    // marker pasted by mistake), the last occurrence wins instead of the
+    // parameter showing up twice in the report.
+    const findingsByRule = new Map<ParamRule, FindingResult>();
     for (const { key, raw } of parsed) {
       const rule = panelDef.rules.find((r) => r.match.test(key));
       if (!rule) continue;
@@ -645,7 +649,7 @@ export function generateStructuredReport(
       markersDetected.push(rule.label);
       const numeric = parseFloat(raw);
       if (rule.kind === "numeric" && isNaN(numeric)) {
-        findings.push({
+        findingsByRule.set(rule, {
           parameter: rule.label,
           rawValue: raw,
           refRange: rule.refRange,
@@ -656,11 +660,7 @@ export function generateStructuredReport(
         continue;
       }
       const evaluated = rule.evaluate(raw, numeric);
-      if (evaluated.status === "flagged") {
-        outOfRangeCount++;
-        if (evaluated.flag) riskFlags.push(evaluated.flag);
-      }
-      findings.push({
+      findingsByRule.set(rule, {
         parameter: rule.label,
         rawValue: raw,
         numericValue: rule.kind === "numeric" ? numeric : undefined,
@@ -670,6 +670,14 @@ export function generateStructuredReport(
         sentenceBM: evaluated.sentenceBM,
         status: evaluated.status,
       });
+    }
+
+    const findings = Array.from(findingsByRule.values());
+    for (const f of findings) {
+      if (f.status === "flagged") {
+        outOfRangeCount++;
+        if (f.flag) riskFlags.push(f.flag);
+      }
     }
 
     if (findings.length === 0) continue;

@@ -213,7 +213,7 @@ export function ReportDocument({
           <View style={{ marginBottom: 8 }}>
             <Text style={s.h2}>5.1 Medical / Perubatan</Text>
             {rec.medical.map((m, i) => (
-              <View style={s.bulletRow} key={i}>
+              <View style={s.bulletRow} key={i} wrap={false}>
                 <Text style={s.bulletDot}>—</Text>
                 <View style={s.bulletText}><Text>{m.en}</Text><Text style={s.bmText}>{m.bm}</Text></View>
               </View>
@@ -224,7 +224,7 @@ export function ReportDocument({
           <View style={{ marginBottom: 8 }}>
             <Text style={s.h2}>5.2 Nutrition Plan / Pelan Pemakanan</Text>
             {rec.nutrition.map((n, i) => (
-              <View style={s.bulletRow} key={i}>
+              <View style={s.bulletRow} key={i} wrap={false}>
                 <Text style={s.bulletDot}>—</Text>
                 <View style={s.bulletText}>
                   <Text>{n.focus}: {n.action} (target: {n.target})</Text>
@@ -238,7 +238,7 @@ export function ReportDocument({
           <View style={{ marginBottom: 8 }}>
             <Text style={s.h2}>5.3 Supplements / Suplemen</Text>
             {rec.supplements.map((sp, i) => (
-              <View style={s.bulletRow} key={i}>
+              <View style={s.bulletRow} key={i} wrap={false}>
                 <Text style={s.bulletDot}>—</Text>
                 <View style={s.bulletText}><Text>{sp.name}: {sp.benefit}</Text><Text style={s.bmText}>{sp.benefitBM}</Text></View>
               </View>
@@ -249,7 +249,7 @@ export function ReportDocument({
           <View style={{ marginBottom: 8 }}>
             <Text style={s.h2}>5.4 Workout / Senaman</Text>
             {rec.workout.map((w, i) => (
-              <View style={s.bulletRow} key={i}>
+              <View style={s.bulletRow} key={i} wrap={false}>
                 <Text style={s.bulletDot}>—</Text>
                 <View style={s.bulletText}><Text>{w.en}</Text><Text style={s.bmText}>{w.bm}</Text></View>
               </View>
@@ -260,7 +260,7 @@ export function ReportDocument({
           <View style={{ marginBottom: 8 }}>
             <Text style={s.h2}>5.5 Mindfulness / Kesedaran Minda</Text>
             {rec.mindfulness.map((m, i) => (
-              <View style={s.bulletRow} key={i}>
+              <View style={s.bulletRow} key={i} wrap={false}>
                 <Text style={s.bulletDot}>—</Text>
                 <View style={s.bulletText}><Text>{m.en}</Text><Text style={s.bmText}>{m.bm}</Text></View>
               </View>
@@ -271,7 +271,7 @@ export function ReportDocument({
           <View style={{ marginBottom: 8 }}>
             <Text style={s.h2}>5.6 Sleep and Stress / Tidur dan Tekanan</Text>
             {rec.sleep.map((sl, i) => (
-              <View style={s.bulletRow} key={i}>
+              <View style={s.bulletRow} key={i} wrap={false}>
                 <Text style={s.bulletDot}>—</Text>
                 <View style={s.bulletText}><Text>{sl.en}</Text><Text style={s.bmText}>{sl.bm}</Text></View>
               </View>
