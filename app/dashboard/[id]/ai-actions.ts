@@ -3,10 +3,66 @@
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/db/audit";
 import { generateStructuredReport, renderReportText } from "@/lib/ai/rules";
+import { extractMarkersFromFiles } from "@/lib/ai/extract-markers";
 import { revalidatePath } from "next/cache";
 import type { ReviewStatus } from "@/lib/db/types";
 
 export type AiActionState = { error?: string };
+
+export type ExtractActionState = { error?: string; markerText?: string; filesProcessed?: number };
+
+export async function extractMarkersAction(submissionId: string): Promise<ExtractActionState> {
+  const supabase = await createClient();
+
+  const { data: submission } = await supabase
+    .from("report_submissions")
+    .select("file_urls, file_url")
+    .eq("id", submissionId)
+    .single();
+
+  const fileUrls =
+    submission?.file_urls && submission.file_urls.length > 0
+      ? submission.file_urls
+      : submission?.file_url
+        ? [submission.file_url]
+        : [];
+
+  if (fileUrls.length === 0) {
+    return { error: "No uploaded file found on this submission." };
+  }
+
+  let result;
+  try {
+    result = await extractMarkersFromFiles(fileUrls);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    if (message === "ANTHROPIC_NOT_CONFIGURED") {
+      return { error: "Automatic file analysis isn't set up yet — please enter markers manually below." };
+    }
+    console.error("extractMarkersFromFiles error", err);
+    return { error: `Could not analyze the uploaded file(s): ${message}` };
+  }
+
+  const { error } = await supabase
+    .from("report_submissions")
+    .update({ marker_input: result.markerText })
+    .eq("id", submissionId);
+
+  if (error) {
+    return { error: "Extraction succeeded but saving the result failed. Please try again." };
+  }
+
+  await logAudit(supabase, {
+    actor: "system",
+    action: "markers_extracted_from_file",
+    target_table: "report_submissions",
+    target_id: submissionId,
+    new_value: `filesProcessed=${result.filesProcessed}`,
+  });
+
+  revalidatePath(`/dashboard/${submissionId}`);
+  return { markerText: result.markerText, filesProcessed: result.filesProcessed };
+}
 
 export async function generateAiDraftAction(
   submissionId: string,

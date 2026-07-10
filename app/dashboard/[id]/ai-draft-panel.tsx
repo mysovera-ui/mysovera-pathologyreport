@@ -5,6 +5,7 @@ import {
   generateAiDraftAction,
   saveDraftEditAction,
   setReviewStatusAction,
+  extractMarkersAction,
   type AiActionState,
 } from "./ai-actions";
 import { generatePdfAction } from "./pdf-actions";
@@ -27,6 +28,31 @@ export function AiDraftPanel({ submission }: { submission: ReportSubmission }) {
   const [isSaving, startSaving] = useTransition();
   const [isGeneratingPdf, startGeneratingPdf] = useTransition();
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [markerInput, setMarkerInput] = useState(submission.marker_input ?? "");
+  const [isExtracting, startExtracting] = useTransition();
+  const [extractError, setExtractError] = useState<string | null>(null);
+  const [extractInfo, setExtractInfo] = useState<string | null>(null);
+
+  const hasUploadedFile =
+    (submission.file_urls && submission.file_urls.length > 0) || !!submission.file_url;
+
+  function handleExtract() {
+    setExtractError(null);
+    setExtractInfo(null);
+    startExtracting(async () => {
+      const result = await extractMarkersAction(submission.id);
+      if (result.error) {
+        setExtractError(result.error);
+        return;
+      }
+      if (result.markerText) {
+        setMarkerInput(result.markerText);
+        setExtractInfo(
+          `Extracted from ${result.filesProcessed} file${result.filesProcessed === 1 ? "" : "s"} — review below, then generate the draft.`,
+        );
+      }
+    });
+  }
 
   const urgency = submission.urgency_score ?? 0;
   const urgencyColor =
@@ -43,16 +69,32 @@ export function AiDraftPanel({ submission }: { submission: ReportSubmission }) {
         )}
       </div>
 
+      <div className="mb-3">
+        <button
+          type="button"
+          onClick={handleExtract}
+          disabled={isExtracting || !hasUploadedFile}
+          className="rounded-lg bg-teal-700 px-4 py-1.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+        >
+          {isExtracting ? "Analyzing uploaded file…" : "Extract from uploaded file(s)"}
+        </button>
+        {!hasUploadedFile && (
+          <span className="ml-2 text-xs text-neutral-400">No uploaded file on this submission.</span>
+        )}
+        {extractError && <p className="mt-1 text-xs text-red-600">{extractError}</p>}
+        {extractInfo && <p className="mt-1 text-xs text-teal-700">{extractInfo}</p>}
+      </div>
+
       <form action={formAction} className="space-y-2">
         <label className="block text-xs font-medium text-neutral-600">
-          Enter marker values from any panel — Hematology, Diabetes, Kidney, Liver,
-          Lipid, Thyroid, Tumor Markers, Vitamin D/B12, Iron Studies, Hormone, etc.
-          (e.g. LDL: 3.59, HbA1c: 5.8, TSH: 4.99, ESR: 22, Vitamin D: 60)
+          Marker values — extracted automatically from the uploaded file above, or enter/edit
+          manually (e.g. LDL: 3.59, HbA1c: 5.8, TSH: 4.99, ESR: 22, Vitamin D: 60).
         </label>
         <textarea
           name="marker_input"
           rows={4}
-          defaultValue={submission.marker_input ?? ""}
+          value={markerInput}
+          onChange={(e) => setMarkerInput(e.target.value)}
           className="w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm"
         />
         {state.error && <p className="text-xs text-red-600">{state.error}</p>}

@@ -62,6 +62,7 @@ export interface Recommendations {
   nutrition: NutritionItem[];
   supplements: SupplementItem[];
   workout: Bilingual[];
+  mindfulness: Bilingual[];
   sleep: Bilingual[];
 }
 
@@ -717,7 +718,7 @@ export function generateStructuredReport(
     };
   });
 
-  const recommendations: Recommendations = { medical: [], nutrition: [], supplements: [], workout: [], sleep: [] };
+  const recommendations: Recommendations = { medical: [], nutrition: [], supplements: [], workout: [], mindfulness: [], sleep: [] };
 
   for (const p of flaggedPanels) {
     const lib = RECOMMENDATION_LIBRARY[p.key];
@@ -731,6 +732,14 @@ export function generateStructuredReport(
     recommendations.workout.push({
       en: "Regular physical activity suited to age and fitness level (e.g. a mix of light-to-moderate cardio and basic strength training) — discuss with your doctor before starting a new routine if you have existing conditions.",
       bm: "Aktiviti fizikal berkala mengikut kemampuan umur & kesihatan (contoh: gabungan kardio ringan-sederhana + latihan kekuatan asas) — berbincang dengan doktor sebelum memulakan rutin baharu jika ada keadaan sedia ada.",
+    });
+    recommendations.mindfulness.push({
+      en: "Build in 5–10 minutes of daily mindfulness practice — slow breathing, guided meditation, or a short gratitude journal — to help lower the stress hormones that can affect blood sugar, blood pressure, and sleep quality.",
+      bm: "Amalkan 5–10 minit kesedaran minda (mindfulness) setiap hari — pernafasan perlahan, meditasi berpandu, atau jurnal kesyukuran ringkas — untuk membantu menurunkan hormon tekanan yang boleh menjejaskan gula darah, tekanan darah, dan kualiti tidur.",
+    });
+    recommendations.mindfulness.push({
+      en: "Practise mindful eating (slow down, no screens during meals) and take short digital-detox breaks during the day to reduce accumulated stress.",
+      bm: "Amalkan pemakanan penuh kesedaran (makan perlahan, elakkan skrin semasa makan) dan ambil rehat detoks digital ringkas sepanjang hari untuk mengurangkan tekanan terkumpul.",
     });
     recommendations.sleep.push({
       en: "Keep a consistent sleep schedule, avoid caffeine late in the day, and build in simple relaxation habits (slow breathing, light stretching).",
@@ -811,6 +820,10 @@ export function renderReportText(report: StructuredReport, customerName?: string
     if (rec.workout.length) {
       lines.push("Activity:");
       rec.workout.forEach((w) => lines.push(`  • ${w.en}`));
+    }
+    if (rec.mindfulness.length) {
+      lines.push("Mindfulness:");
+      rec.mindfulness.forEach((m) => lines.push(`  • ${m.en}`));
     }
     if (rec.sleep.length) {
       lines.push("Sleep & Stress:");

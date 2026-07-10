@@ -256,9 +256,20 @@ export function ReportDocument({
             ))}
           </View>
         )}
+        {rec.mindfulness.length > 0 && (
+          <View style={{ marginBottom: 8 }}>
+            <Text style={s.h2}>5.5 Mindfulness / Kesedaran Minda</Text>
+            {rec.mindfulness.map((m, i) => (
+              <View style={s.bulletRow} key={i}>
+                <Text style={s.bulletDot}>—</Text>
+                <View style={s.bulletText}><Text>{m.en}</Text><Text style={s.bmText}>{m.bm}</Text></View>
+              </View>
+            ))}
+          </View>
+        )}
         {rec.sleep.length > 0 && (
           <View style={{ marginBottom: 8 }}>
-            <Text style={s.h2}>5.5 Sleep and Stress / Tidur dan Tekanan</Text>
+            <Text style={s.h2}>5.6 Sleep and Stress / Tidur dan Tekanan</Text>
             {rec.sleep.map((sl, i) => (
               <View style={s.bulletRow} key={i}>
                 <Text style={s.bulletDot}>—</Text>
