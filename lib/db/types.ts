@@ -22,6 +22,7 @@ export interface ReportSubmission {
   health_concern: string | null;
   report_type: ReportType | string | null;
   file_url: string | null;
+  file_urls: string[] | null;
   symptoms_notes: string | null;
   payment_status: PaymentStatus;
   report_status: ReportStatus;

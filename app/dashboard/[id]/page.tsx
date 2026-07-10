@@ -96,16 +96,30 @@ export default async function SubmissionDetailPage({
                   <p className="text-sm text-neutral-800">{submission.symptoms_notes}</p>
                 </div>
               )}
-              {submission.file_url && (
+              {(submission.file_urls?.length ?? (submission.file_url ? 1 : 0)) > 0 && (
                 <div className="mt-4">
-                  <p className="text-xs font-medium text-neutral-500 mb-1">Uploaded file</p>
-                  <a
-                    href={submission.file_url}
-                    target="_blank"
-                    className="text-sm text-teal-700 hover:underline break-all"
-                  >
-                    {submission.file_url}
-                  </a>
+                  <p className="text-xs font-medium text-neutral-500 mb-1">
+                    Uploaded file{(submission.file_urls?.length ?? 1) > 1 ? "s" : ""}
+                    {submission.file_urls && submission.file_urls.length > 1 ? ` (${submission.file_urls.length})` : ""}
+                  </p>
+                  <ul className="space-y-1">
+                    {(submission.file_urls && submission.file_urls.length > 0
+                      ? submission.file_urls
+                      : submission.file_url
+                        ? [submission.file_url]
+                        : ([] as string[])
+                    ).map((url: string, i: number) => (
+                      <li key={i}>
+                        <a
+                          href={url}
+                          target="_blank"
+                          className="text-sm text-teal-700 hover:underline break-all"
+                        >
+                          {url}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </section>

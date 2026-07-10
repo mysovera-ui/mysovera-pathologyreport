@@ -20,12 +20,23 @@ export async function submitReportAction(
   const health_concern = String(formData.get("health_concern") || "").trim();
   const report_panels = formData.getAll("report_panels").map((v) => String(v));
   const symptoms_notes = String(formData.get("symptoms_notes") || "").trim();
-  // The file itself is uploaded client-side straight to Supabase Storage
-  // (see submit/page.tsx) so it never passes through this server action's
-  // body — Vercel functions cap request bodies at ~4.5MB, well under the
-  // 10MB reports we need to accept. Only the resulting public URL crosses
-  // the server boundary.
-  const file_url = String(formData.get("file_url") || "").trim() || null;
+  // Files are uploaded client-side straight to Supabase Storage (see
+  // submit/page.tsx) so they never pass through this server action's body —
+  // Vercel functions cap request bodies at ~4.5MB, well under the up-to-10MB
+  // combined reports we need to accept. Only the resulting public URLs cross
+  // the server boundary, as a JSON-encoded array (max 10 files, 10MB total,
+  // enforced client-side before upload).
+  let file_urls: string[] = [];
+  try {
+    const raw = String(formData.get("file_urls") || "[]");
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      file_urls = parsed.filter((u): u is string => typeof u === "string" && u.length > 0).slice(0, 10);
+    }
+  } catch {
+    file_urls = [];
+  }
+  const file_url = file_urls[0] ?? null;
 
   const fieldErrors: Record<string, string> = {};
   if (!customer_name) fieldErrors.customer_name = "Name is required";
@@ -53,6 +64,7 @@ export async function submitReportAction(
       report_panels,
       symptoms_notes: symptoms_notes || null,
       file_url,
+      file_urls,
       payment_status: "unpaid",
       report_status: "received",
       follow_up_interest: false,
