@@ -74,3 +74,55 @@ export async function sendDeliveryEmail(opts: {
   }
   return data;
 }
+
+export function paymentRequestEmailHtml({
+  customerName,
+  referenceCode,
+  paymentUrl,
+  amountLabel,
+}: {
+  customerName: string;
+  referenceCode: string;
+  paymentUrl: string;
+  amountLabel: string;
+}): string {
+  const firstName = customerName.split(" ")[0];
+  return `
+  <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1F2937;">
+    <p style="color:#0F766E; font-weight:600; margin-bottom: 4px;">Health Bridge Solution</p>
+    <h2 style="margin-top: 0;">Your health report is reviewed and ready, ${firstName}</h2>
+    <p>Your plain-language health summary (reference <strong>${referenceCode}</strong>) has been reviewed by our team. Complete payment of <strong>${amountLabel}</strong> to receive your report by email.</p>
+    <p>
+      <a href="${paymentUrl}" style="display:inline-block; background:#0F766E; color:#fff; padding:12px 20px; border-radius:8px; text-decoration:none; font-weight:600;">
+        Pay ${amountLabel} to unlock your report
+      </a>
+    </p>
+    <p style="color:#6B7280; font-size: 14px;">
+      Payment is processed securely via Billplz. Once payment is confirmed, your report will be sent to this email address automatically.
+    </p>
+    <p style="color:#9CA3AF; font-size: 12px; margin-top: 32px;">
+      Health Bridge Solution
+    </p>
+  </div>`;
+}
+
+export async function sendPaymentRequestEmail(opts: {
+  to: string;
+  customerName: string;
+  referenceCode: string;
+  paymentUrl: string;
+  amountLabel: string;
+}) {
+  const resend = getClient();
+  const html = paymentRequestEmailHtml(opts);
+  const { data, error } = await resend.emails.send({
+    from: FROM_ADDRESS,
+    to: opts.to,
+    subject: `Payment required to receive your health report (${opts.referenceCode})`,
+    html,
+  });
+  if (error) {
+    throw new Error(error.message || "Failed to send email");
+  }
+  return data;
+}

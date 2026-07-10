@@ -12,7 +12,7 @@ export async function sendDeliveryEmailAction(submissionId: string): Promise<Ema
 
   const { data: submission, error: subError } = await supabase
     .from("report_submissions")
-    .select("customer_name, email, reference_code, report_status")
+    .select("customer_name, email, reference_code, report_status, payment_status")
     .eq("id", submissionId)
     .single();
 
@@ -21,6 +21,9 @@ export async function sendDeliveryEmailAction(submissionId: string): Promise<Ema
   }
   if (submission.report_status !== "delivered") {
     return { error: "Mark the report Delivered before sending the email." };
+  }
+  if (submission.payment_status !== "paid" && submission.payment_status !== "waived") {
+    return { error: "Payment hasn't been received yet — send the payment link first, or mark payment as waived." };
   }
 
   const { data: delivery, error: delError } = await supabase

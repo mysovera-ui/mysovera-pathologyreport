@@ -25,6 +25,9 @@ export interface ReportSubmission {
   file_urls: string[] | null;
   symptoms_notes: string | null;
   payment_status: PaymentStatus;
+  billplz_bill_id: string | null;
+  billplz_url: string | null;
+  billplz_paid_at: string | null;
   report_status: ReportStatus;
   reference_code: string;
   submitted_at: string;

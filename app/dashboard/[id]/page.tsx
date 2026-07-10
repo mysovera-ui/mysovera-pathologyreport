@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { STATUS_STYLES, PAYMENT_STYLES, formatDateTime } from "@/lib/db/format";
 import { StatusActions } from "./status-actions";
 import { PaymentToggle } from "./payment-toggle";
+import { PaymentLinkButton } from "./payment-link-button";
 import { DeliveryForm } from "./delivery-form";
 import { AiDraftPanel } from "./ai-draft-panel";
 import { SendEmailButton } from "./send-email-button";
@@ -180,6 +181,13 @@ export default async function SubmissionDetailPage({
               <PaymentToggle
                 submissionId={submission.id}
                 payment={submission.payment_status as PaymentStatus}
+              />
+              <PaymentLinkButton
+                submissionId={submission.id}
+                customerEmail={submission.email}
+                reportStatus={submission.report_status as ReportStatus}
+                paymentStatus={submission.payment_status as PaymentStatus}
+                billplzUrl={submission.billplz_url}
               />
             </section>
 
