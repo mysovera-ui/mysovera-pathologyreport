@@ -9,7 +9,12 @@ import type { ReviewStatus } from "@/lib/db/types";
 
 export type AiActionState = { error?: string };
 
-export type ExtractActionState = { error?: string; markerText?: string; filesProcessed?: number };
+export type ExtractActionState = {
+  error?: string;
+  markerText?: string;
+  clinicalHistory?: string | null;
+  filesProcessed?: number;
+};
 
 export async function extractMarkersAction(submissionId: string): Promise<ExtractActionState> {
   const supabase = await createClient();
@@ -45,7 +50,7 @@ export async function extractMarkersAction(submissionId: string): Promise<Extrac
 
   const { error } = await supabase
     .from("report_submissions")
-    .update({ marker_input: result.markerText })
+    .update({ marker_input: result.markerText, clinical_history: result.clinicalHistory })
     .eq("id", submissionId);
 
   if (error) {
@@ -57,11 +62,11 @@ export async function extractMarkersAction(submissionId: string): Promise<Extrac
     action: "markers_extracted_from_file",
     target_table: "report_submissions",
     target_id: submissionId,
-    new_value: `filesProcessed=${result.filesProcessed}`,
+    new_value: `filesProcessed=${result.filesProcessed}, clinicalHistory=${result.clinicalHistory ? "yes" : "no"}`,
   });
 
   revalidatePath(`/dashboard/${submissionId}`);
-  return { markerText: result.markerText, filesProcessed: result.filesProcessed };
+  return { markerText: result.markerText, clinicalHistory: result.clinicalHistory, filesProcessed: result.filesProcessed };
 }
 
 export async function generateAiDraftAction(
@@ -70,6 +75,7 @@ export async function generateAiDraftAction(
   formData: FormData,
 ): Promise<AiActionState> {
   const markerInput = String(formData.get("marker_input") || "").trim();
+  const clinicalHistory = String(formData.get("clinical_history") || "").trim() || null;
 
   if (!markerInput) {
     return { error: "Please enter at least one marker value." };
@@ -91,12 +97,13 @@ export async function generateAiDraftAction(
     return { error: "None of those markers were recognized. Check the format is like 'LDL: 4.8, HbA1c: 6.1'." };
   }
 
-  const draftText = renderReportText(report, submission?.customer_name ?? undefined);
+  const draftText = renderReportText(report, submission?.customer_name ?? undefined, clinicalHistory);
 
   const { error } = await supabase
     .from("report_submissions")
     .update({
       marker_input: markerInput,
+      clinical_history: clinicalHistory,
       ai_summary_draft: draftText,
       ai_summary_source: "rule-based-v1",
       ai_summary_confidence: report.confidence,

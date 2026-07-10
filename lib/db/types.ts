@@ -35,6 +35,7 @@ export interface ReportSubmission {
   ai_summary_confidence: number | null;
   ai_summary_review_status: ReviewStatus;
   marker_input: string | null;
+  clinical_history: string | null;
   urgency_score: number | null;
   ai_risk_flags: string | null;
   report_panels: string[] | null;

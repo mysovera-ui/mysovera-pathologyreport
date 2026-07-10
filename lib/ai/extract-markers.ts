@@ -2,6 +2,8 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const MODEL = "claude-sonnet-5";
 const MAX_FILES = 10;
+const MARKERS_HEADER = "===LAB_MARKERS===";
+const HISTORY_HEADER = "===CLINICAL_HISTORY===";
 
 function getClient(): Anthropic {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -51,14 +53,20 @@ Iron Studies: Serum Iron, Transferrin, TIBC, Saturation, Ferritin
 Hormone: FSH, LH, Estradiol
 `.trim();
 
-const SYSTEM_PROMPT = `You are a meticulous medical lab report transcriber. You will be shown one or more pages/photos of a patient's pathology/lab report (possibly scanned or photographed, sometimes across multiple images for a multi-page report).
+const SYSTEM_PROMPT = `You are a meticulous medical records transcriber. You will be shown one or more pages/photos of a patient's medical records — this can include pathology/lab report pages, and sometimes other clinical documents such as a hospital discharge summary or an imaging (MRI/X-ray/CT) screenshot, possibly scanned or photographed.
 
-Your only job is to find every lab test result on the pages and output them as plain "Parameter: value" lines, one per line — nothing else. No headings, no commentary, no markdown, no bullet points.
+You must output your answer in exactly two sections, in this exact format and order, with nothing before, between, or after them except the section headers themselves:
 
-Rules:
-- Use the exact parameter names from this list whenever the test on the page matches one of them (case does not matter, but use these exact words):
+${MARKERS_HEADER}
+(lab marker lines go here, or leave this section empty if there are none)
+${HISTORY_HEADER}
+(clinical history summary goes here, or the single word "None" if there are no non-lab clinical documents)
+
+=== Section 1: ${MARKERS_HEADER} ===
+Find every lab test result on any lab-report pages and output them as plain "Parameter: value" lines, one per line. No headings, no commentary, no markdown, no bullet points.
+- Use the exact parameter names from this list whenever the test matches one of them (case does not matter, but use these exact words):
 ${KNOWN_PARAMETERS}
-- If a test on the page isn't in that list, still include it using the name printed on the report, in case it's useful, but prioritize accuracy over completeness.
+- If a test isn't in that list, still include it using the name printed on the report, in case it's useful, but prioritize accuracy over completeness.
 - Only output the numeric or qualitative RESULT value, not the reference range (e.g. "HbA1c: 6.1" not "HbA1c: 6.1 (Normal <5.7%)").
 - Use plain numbers without units in the value (e.g. "Haemoglobin: 138" not "Haemoglobin: 138 g/L") — but see the unit-conversion rule below first.
 - Unit conversion — this system always expects Haemoglobin and MCHC in g/L. Many lab reports (especially Malaysian hospital
@@ -71,13 +79,22 @@ ${KNOWN_PARAMETERS}
   equivalent x10^3/uL — same number, no conversion needed). Always use the absolute COUNT column, never the percentage.
 - For qualitative urinalysis results use exactly one word: Negative, Positive, or Trace.
 - If you cannot read a value confidently, skip that line rather than guessing.
-- If there are multiple pages/images, combine everything into one flat list with no duplicate parameters (if a parameter appears more than once, use the clearest/most recent reading).
+- If a parameter appears more than once across pages, use the clearest/most recent reading — do not output it twice.
 - Be careful not to confuse a parameter with a related ratio or derived value printed nearby (e.g. "HDL Cholesterol" is not the same as "Cholesterol/HDL Ratio" or "Non-HDL Cholesterol" — only use the exact parameter, not a ratio calculated from it).
-- Some pages may be clinical documents rather than lab results (e.g. a hospital discharge summary, an imaging/MRI screenshot). These do not contain "Parameter: value" lab data — skip them entirely rather than inventing values, and do not treat a diagnosis or clinical note as a lab result.
-- Do not include patient name, age, dates, lab name, or any other non-test-result information.`;
+- Do not include patient name, age, dates, lab name, or any other non-test-result information in this section.
+- Non-lab pages (discharge summaries, imaging screenshots) have no lines here — their content goes in section 2 instead.
+
+=== Section 2: ${HISTORY_HEADER} ===
+If any of the pages are a hospital discharge summary, clinic letter, or imaging report/screenshot (MRI, X-ray, CT, ultrasound, etc.) rather than a lab results table, summarize the clinically relevant content in a few short plain-language bullet lines (each starting with "- "), covering whichever of these are present:
+- Final diagnosis / clinical impression
+- Key imaging findings (in plain language, e.g. "MRI showed a bulging disc at C5/C6 and C6/C7 with nerve compression")
+- Procedures or treatment given
+- Follow-up plan (next clinic visit, referrals, medical leave)
+Keep it factual and attributed to the source document (e.g. "Per discharge summary from [hospital]: ..."), not your own medical opinion. Do not invent details that aren't on the page. If there are no such documents among the pages, output exactly "None" for this section.`;
 
 export interface ExtractResult {
   markerText: string;
+  clinicalHistory: string | null;
   filesProcessed: number;
 }
 
@@ -110,12 +127,12 @@ export async function extractMarkersFromFiles(fileUrls: string[]): Promise<Extra
   }
   content.push({
     type: "text",
-    text: "Extract every lab test result from the report page(s)/photo(s) above, following the system instructions exactly.",
+    text: "Read the page(s)/photo(s) above and produce the two-section output exactly as instructed.",
   });
 
   const message = await client.messages.create({
     model: MODEL,
-    max_tokens: 2000,
+    max_tokens: 3000,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content }],
   });
@@ -123,11 +140,31 @@ export async function extractMarkersFromFiles(fileUrls: string[]): Promise<Extra
   const textBlocks = message.content.filter(
     (b): b is Anthropic.Messages.TextBlock => b.type === "text",
   );
-  const markerText = textBlocks.map((b) => b.text).join("\n").trim();
+  const fullText = textBlocks.map((b) => b.text).join("\n").trim();
 
-  if (!markerText) {
-    throw new Error("Could not extract any readable values from the uploaded file(s).");
+  if (!fullText) {
+    throw new Error("Could not extract anything from the uploaded file(s).");
   }
 
-  return { markerText, filesProcessed: urls.length };
+  const historyIdx = fullText.indexOf(HISTORY_HEADER);
+  const markersIdx = fullText.indexOf(MARKERS_HEADER);
+
+  let markerSection = markersIdx >= 0 ? fullText.slice(markersIdx + MARKERS_HEADER.length) : fullText;
+  if (historyIdx >= 0) {
+    markerSection = fullText.slice(
+      markersIdx >= 0 ? markersIdx + MARKERS_HEADER.length : 0,
+      historyIdx,
+    );
+  }
+  const historySection = historyIdx >= 0 ? fullText.slice(historyIdx + HISTORY_HEADER.length) : "";
+
+  const markerText = markerSection.trim();
+  const historyTrimmed = historySection.trim();
+  const clinicalHistory = historyTrimmed.length === 0 || /^none\.?$/i.test(historyTrimmed) ? null : historyTrimmed;
+
+  if (!markerText && !clinicalHistory) {
+    throw new Error("Could not extract any readable values or clinical history from the uploaded file(s).");
+  }
+
+  return { markerText, clinicalHistory, filesProcessed: urls.length };
 }

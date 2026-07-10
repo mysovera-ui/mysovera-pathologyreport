@@ -29,6 +29,7 @@ export function AiDraftPanel({ submission }: { submission: ReportSubmission }) {
   const [isGeneratingPdf, startGeneratingPdf] = useTransition();
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [markerInput, setMarkerInput] = useState(submission.marker_input ?? "");
+  const [clinicalHistory, setClinicalHistory] = useState(submission.clinical_history ?? "");
   const [isExtracting, startExtracting] = useTransition();
   const [extractError, setExtractError] = useState<string | null>(null);
   const [extractInfo, setExtractInfo] = useState<string | null>(null);
@@ -47,10 +48,15 @@ export function AiDraftPanel({ submission }: { submission: ReportSubmission }) {
       }
       if (result.markerText) {
         setMarkerInput(result.markerText);
-        setExtractInfo(
-          `Extracted from ${result.filesProcessed} file${result.filesProcessed === 1 ? "" : "s"} — review below, then generate the draft.`,
-        );
       }
+      if (result.clinicalHistory) {
+        setClinicalHistory(result.clinicalHistory);
+      }
+      setExtractInfo(
+        `Extracted from ${result.filesProcessed} file${result.filesProcessed === 1 ? "" : "s"}${
+          result.clinicalHistory ? " — including a clinical history summary" : ""
+        } — review below, then generate the draft.`,
+      );
     });
   }
 
@@ -97,6 +103,21 @@ export function AiDraftPanel({ submission }: { submission: ReportSubmission }) {
           onChange={(e) => setMarkerInput(e.target.value)}
           className="w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm"
         />
+
+        <label className="block text-xs font-medium text-neutral-600 pt-2">
+          Clinical history (optional) — from a discharge summary, clinic letter, or imaging
+          report among the uploaded files, if any. Shown in the report as reported by the
+          treating doctor, not as our own analysis.
+        </label>
+        <textarea
+          name="clinical_history"
+          rows={3}
+          value={clinicalHistory}
+          onChange={(e) => setClinicalHistory(e.target.value)}
+          placeholder="e.g. Per discharge summary: C5/C6 and C6/C7 cervical disc prolapse with radiculopathy; acute migraine. Follow-up with orthopaedic surgeon."
+          className="w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm"
+        />
+
         {state.error && <p className="text-xs text-red-600">{state.error}</p>}
         <button
           type="submit"

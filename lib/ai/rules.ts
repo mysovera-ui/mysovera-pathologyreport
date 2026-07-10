@@ -778,10 +778,15 @@ export function generateStructuredReport(
   };
 }
 
-export function renderReportText(report: StructuredReport, customerName?: string): string {
+export function renderReportText(report: StructuredReport, customerName?: string, clinicalHistory?: string | null): string {
   const lines: string[] = [];
   lines.push(`CLINICAL HEALTH REPORT SUMMARY — ${customerName ?? ""}`.trim());
   lines.push("");
+  if (clinicalHistory) {
+    lines.push("=== CLINICAL HISTORY (from uploaded records) ===");
+    lines.push(clinicalHistory);
+    lines.push("");
+  }
   lines.push(`Overall Status: ${report.overallRisk.toUpperCase()}`);
   lines.push(report.overallRiskReason);
   lines.push("");
