@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { logAudit } from "@/lib/db/audit";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ReportDocument } from "@/lib/pdf/report-document";
@@ -11,7 +11,7 @@ import React from "react";
 export type PdfActionState = { error?: string };
 
 export async function generatePdfAction(submissionId: string): Promise<PdfActionState> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data: submission, error: fetchError } = await supabase
     .from("report_submissions")

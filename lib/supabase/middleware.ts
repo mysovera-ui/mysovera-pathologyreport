@@ -37,7 +37,32 @@ export async function updateSession(request: NextRequest) {
     });
 
     // Refresh session so it doesn't expire while user is active
-    await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const path = request.nextUrl.pathname;
+    if (path.startsWith("/dashboard")) {
+      if (!user) {
+        const redirectUrl = new URL("/login", request.url);
+        return NextResponse.redirect(redirectUrl);
+      }
+
+      // staff_members RLS only allows a user to read their own row (see
+      // migration 0010_staff_auth_lockdown.sql), so this is safe on the
+      // anon+auth client -- it can never be used to browse other staff.
+      const { data: staffRow } = await supabase
+        .from("staff_members")
+        .select("email")
+        .eq("email", user.email ?? "")
+        .maybeSingle();
+
+      if (!staffRow) {
+        const redirectUrl = new URL("/unauthorized", request.url);
+        return NextResponse.redirect(redirectUrl);
+      }
+    }
+
     return response;
   } catch {
     // Never let an auth hiccup crash the entire edge middleware

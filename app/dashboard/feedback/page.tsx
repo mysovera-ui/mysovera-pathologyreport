@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { formatDateTime } from "@/lib/db/format";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ interface FeedbackRow {
 }
 
 export default async function FeedbackOverviewPage() {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const { data: feedback, error } = await supabase
     .from("customer_feedback")
     .select(

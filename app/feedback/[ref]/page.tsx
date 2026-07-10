@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { FeedbackForm } from "./feedback-form";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,7 @@ export default async function FeedbackPage({
   params: Promise<{ ref: string }>;
 }) {
   const { ref } = await params;
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data: submission } = await supabase
     .from("report_submissions")

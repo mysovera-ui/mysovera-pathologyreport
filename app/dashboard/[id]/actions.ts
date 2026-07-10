@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { logAudit } from "@/lib/db/audit";
 import { revalidatePath } from "next/cache";
 import type { PaymentStatus, ReportStatus } from "@/lib/db/types";
@@ -18,7 +18,7 @@ export async function updateStatusAction(
   submissionId: string,
   nextStatus: ReportStatus,
 ): Promise<ActionResult> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data: current, error: fetchError } = await supabase
     .from("report_submissions")
@@ -66,7 +66,7 @@ export async function updatePaymentAction(
   submissionId: string,
   nextPayment: PaymentStatus,
 ): Promise<ActionResult> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data: current } = await supabase
     .from("report_submissions")
@@ -111,7 +111,7 @@ export async function deliverReportAction(
   if (!pdf_url) return { error: "PDF URL is required." };
   if (!delivered_by) return { error: "Your name is required." };
 
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data: current } = await supabase
     .from("report_submissions")

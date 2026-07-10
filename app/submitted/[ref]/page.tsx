@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { notFound } from "next/navigation";
 
 export default async function SubmittedPage({
@@ -8,7 +8,7 @@ export default async function SubmittedPage({
   params: Promise<{ ref: string }>;
 }) {
   const { ref } = await params;
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const { data: submission } = await supabase
     .from("report_submissions")
     .select("reference_code, customer_name, report_type")

@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { STATUS_STYLES, PAYMENT_STYLES, formatDate } from "@/lib/db/format";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const { data: submissions, error } = await supabase
     .from("report_submissions")
     .select(

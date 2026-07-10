@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { STATUS_STYLES, PAYMENT_STYLES, formatDateTime } from "@/lib/db/format";
 import { StatusActions } from "./status-actions";
 import { PaymentToggle } from "./payment-toggle";
@@ -17,7 +17,7 @@ export default async function SubmissionDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data: submission } = await supabase
     .from("report_submissions")

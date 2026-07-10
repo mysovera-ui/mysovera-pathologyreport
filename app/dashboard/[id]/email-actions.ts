@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { logAudit } from "@/lib/db/audit";
 import { sendDeliveryEmail } from "@/lib/email/resend";
 import { revalidatePath } from "next/cache";
@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 export type EmailActionState = { error?: string; success?: boolean };
 
 export async function sendDeliveryEmailAction(submissionId: string): Promise<EmailActionState> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data: submission, error: subError } = await supabase
     .from("report_submissions")

@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { logAudit } from "@/lib/db/audit";
 import { redirect } from "next/navigation";
 
@@ -50,7 +50,7 @@ export async function submitReportAction(
 
   const age = ageRaw ? parseInt(ageRaw, 10) : null;
 
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data, error } = await supabase
     .from("report_submissions")

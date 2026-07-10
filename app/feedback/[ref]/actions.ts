@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { logAudit } from "@/lib/db/audit";
 
 export type FeedbackFormState = { error?: string; success?: boolean };
@@ -19,7 +19,7 @@ export async function submitFeedbackAction(
     return { error: "Please select a rating from 1 to 5." };
   }
 
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { error } = await supabase.from("customer_feedback").insert({
     submission_id: submissionId,

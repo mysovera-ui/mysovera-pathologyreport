@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { logAudit } from "@/lib/db/audit";
 import { generateStructuredReport, renderReportText } from "@/lib/ai/rules";
 import { extractMarkersFromFiles } from "@/lib/ai/extract-markers";
@@ -17,7 +17,7 @@ export type ExtractActionState = {
 };
 
 export async function extractMarkersAction(submissionId: string): Promise<ExtractActionState> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data: submission } = await supabase
     .from("report_submissions")
@@ -81,7 +81,7 @@ export async function generateAiDraftAction(
     return { error: "Please enter at least one marker value." };
   }
 
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data: submission } = await supabase
     .from("report_submissions")
@@ -139,7 +139,7 @@ export async function saveDraftEditAction(
   submissionId: string,
   newText: string,
 ): Promise<AiActionState> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { error } = await supabase
     .from("report_submissions")
@@ -167,7 +167,7 @@ export async function setReviewStatusAction(
   submissionId: string,
   status: ReviewStatus,
 ): Promise<AiActionState> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { error } = await supabase
     .from("report_submissions")
