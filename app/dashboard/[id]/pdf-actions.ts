@@ -16,7 +16,7 @@ export async function generatePdfAction(submissionId: string): Promise<PdfAction
   const { data: submission, error: fetchError } = await supabase
     .from("report_submissions")
     .select(
-      "customer_name, age, gender, reference_code, submitted_at, ai_structured_result, ai_summary_review_status, clinical_history",
+      "customer_name, age, gender, reference_code, submitted_at, ai_structured_result, ai_summary_review_status, clinical_history, extracted_full_name, extracted_age, extracted_gender, extracted_nric",
     )
     .eq("id", submissionId)
     .single();
@@ -32,9 +32,10 @@ export async function generatePdfAction(submissionId: string): Promise<PdfAction
   try {
     const element = React.createElement(ReportDocument, {
       report: submission.ai_structured_result as StructuredReport,
-      customerName: submission.customer_name,
-      age: submission.age,
-      gender: submission.gender,
+      customerName: submission.extracted_full_name ?? "",
+      age: submission.extracted_age,
+      gender: submission.extracted_gender,
+      nric: submission.extracted_nric,
       referenceCode: submission.reference_code,
       submittedAt: submission.submitted_at,
       reviewStatus: submission.ai_summary_review_status,

@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { logAudit } from "@/lib/db/audit";
 import { generateStructuredReport, renderReportText } from "@/lib/ai/rules";
 import { extractMarkersFromFiles } from "@/lib/ai/extract-markers";
+import { normalizeFullName, normalizeAge, normalizeGender, normalizeNric } from "@/lib/patient-info";
 import { revalidatePath } from "next/cache";
 import type { ReviewStatus } from "@/lib/db/types";
 
@@ -13,6 +14,10 @@ export type ExtractActionState = {
   error?: string;
   markerText?: string;
   clinicalHistory?: string | null;
+  extractedFullName?: string | null;
+  extractedAge?: number | null;
+  extractedGender?: string | null;
+  extractedNric?: string | null;
   filesProcessed?: number;
 };
 
@@ -50,7 +55,14 @@ export async function extractMarkersAction(submissionId: string): Promise<Extrac
 
   const { error } = await supabase
     .from("report_submissions")
-    .update({ marker_input: result.markerText, clinical_history: result.clinicalHistory })
+    .update({
+      marker_input: result.markerText,
+      clinical_history: result.clinicalHistory,
+      extracted_full_name: result.patientInfo.fullName,
+      extracted_age: result.patientInfo.age,
+      extracted_gender: result.patientInfo.gender,
+      extracted_nric: result.patientInfo.nric,
+    })
     .eq("id", submissionId);
 
   if (error) {
@@ -66,7 +78,15 @@ export async function extractMarkersAction(submissionId: string): Promise<Extrac
   });
 
   revalidatePath(`/dashboard/${submissionId}`);
-  return { markerText: result.markerText, clinicalHistory: result.clinicalHistory, filesProcessed: result.filesProcessed };
+  return {
+    markerText: result.markerText,
+    clinicalHistory: result.clinicalHistory,
+    extractedFullName: result.patientInfo.fullName,
+    extractedAge: result.patientInfo.age,
+    extractedGender: result.patientInfo.gender,
+    extractedNric: result.patientInfo.nric,
+    filesProcessed: result.filesProcessed,
+  };
 }
 
 export async function generateAiDraftAction(
@@ -76,6 +96,10 @@ export async function generateAiDraftAction(
 ): Promise<AiActionState> {
   const markerInput = String(formData.get("marker_input") || "").trim();
   const clinicalHistory = String(formData.get("clinical_history") || "").trim() || null;
+  const extractedFullName = normalizeFullName(String(formData.get("extracted_full_name") || ""));
+  const extractedAge = normalizeAge(String(formData.get("extracted_age") || ""));
+  const extractedGender = normalizeGender(String(formData.get("extracted_gender") || ""));
+  const extractedNric = normalizeNric(String(formData.get("extracted_nric") || ""));
 
   if (!markerInput) {
     return { error: "Please enter at least one marker value." };
@@ -111,6 +135,10 @@ export async function generateAiDraftAction(
       urgency_score: report.urgencyScore,
       ai_risk_flags: report.riskFlags.join(", ") || null,
       ai_structured_result: report,
+      extracted_full_name: extractedFullName,
+      extracted_age: extractedAge,
+      extracted_gender: extractedGender,
+      extracted_nric: extractedNric,
       // Regenerating the draft invalidates any previously generated PDF —
       // the coach should regenerate the PDF from the fresh draft.
       generated_pdf_url: null,

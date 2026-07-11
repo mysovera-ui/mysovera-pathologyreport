@@ -47,6 +47,10 @@ export interface ReportSubmission {
   ai_structured_result: unknown | null;
   generated_pdf_url: string | null;
   generated_pdf_generated_at: string | null;
+  extracted_full_name: string | null;
+  extracted_age: number | null;
+  extracted_gender: string | null;
+  extracted_nric: string | null;
   follow_up_status: FollowUpStatus;
 }
 

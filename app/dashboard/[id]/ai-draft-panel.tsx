@@ -30,6 +30,12 @@ export function AiDraftPanel({ submission }: { submission: ReportSubmission }) {
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [markerInput, setMarkerInput] = useState(submission.marker_input ?? "");
   const [clinicalHistory, setClinicalHistory] = useState(submission.clinical_history ?? "");
+  const [extractedFullName, setExtractedFullName] = useState(submission.extracted_full_name ?? "");
+  const [extractedAge, setExtractedAge] = useState(
+    submission.extracted_age != null ? String(submission.extracted_age) : "",
+  );
+  const [extractedGender, setExtractedGender] = useState(submission.extracted_gender ?? "");
+  const [extractedNric, setExtractedNric] = useState(submission.extracted_nric ?? "");
   const [isExtracting, startExtracting] = useTransition();
   const [extractError, setExtractError] = useState<string | null>(null);
   const [extractInfo, setExtractInfo] = useState<string | null>(null);
@@ -52,6 +58,10 @@ export function AiDraftPanel({ submission }: { submission: ReportSubmission }) {
       if (result.clinicalHistory) {
         setClinicalHistory(result.clinicalHistory);
       }
+      setExtractedFullName(result.extractedFullName ?? "");
+      setExtractedAge(result.extractedAge != null ? String(result.extractedAge) : "");
+      setExtractedGender(result.extractedGender ?? "");
+      setExtractedNric(result.extractedNric ?? "");
       setExtractInfo(
         `Extracted from ${result.filesProcessed} file${result.filesProcessed === 1 ? "" : "s"}${
           result.clinicalHistory ? " — including a clinical history summary" : ""
@@ -117,6 +127,49 @@ export function AiDraftPanel({ submission }: { submission: ReportSubmission }) {
           placeholder="e.g. Per discharge summary: C5/C6 and C6/C7 cervical disc prolapse with radiculopathy; acute migraine. Follow-up with orthopaedic surgeon."
           className="w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm"
         />
+
+        <div className="pt-2">
+          <label className="block text-xs font-medium text-neutral-600">
+            Patient identity — read directly off the uploaded report (name, age, gender, NRIC).
+            This is what appears on the cover page and Patient Details section of the branded
+            PDF, not the customer&apos;s self-entered submission details. Correct anything
+            misread here; leave a field blank if it isn&apos;t on the report.
+          </label>
+          <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <input
+              name="extracted_full_name"
+              value={extractedFullName}
+              onChange={(e) => setExtractedFullName(e.target.value)}
+              placeholder="Full name"
+              className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm"
+            />
+            <input
+              name="extracted_age"
+              value={extractedAge}
+              onChange={(e) => setExtractedAge(e.target.value)}
+              placeholder="Age"
+              inputMode="numeric"
+              className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm"
+            />
+            <select
+              name="extracted_gender"
+              value={extractedGender}
+              onChange={(e) => setExtractedGender(e.target.value)}
+              className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm"
+            >
+              <option value="">Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+            <input
+              name="extracted_nric"
+              value={extractedNric}
+              onChange={(e) => setExtractedNric(e.target.value)}
+              placeholder="NRIC"
+              className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm"
+            />
+          </div>
+        </div>
 
         {state.error && <p className="text-xs text-red-600">{state.error}</p>}
         <button

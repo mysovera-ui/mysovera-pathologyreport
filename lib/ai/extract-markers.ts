@@ -1,9 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { normalizeFullName, normalizeAge, normalizeGender, normalizeNric } from "@/lib/patient-info";
 
 const MODEL = "claude-sonnet-5";
 const MAX_FILES = 10;
 const MARKERS_HEADER = "===LAB_MARKERS===";
 const HISTORY_HEADER = "===CLINICAL_HISTORY===";
+const PATIENT_HEADER = "===PATIENT_INFO===";
 
 function getClient(): Anthropic {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -55,14 +57,16 @@ Hormone: FSH, LH, Estradiol
 
 const SYSTEM_PROMPT = `You are a meticulous medical records transcriber. You will be shown one or more pages/photos of a patient's medical records — this can include pathology/lab report pages, and sometimes other clinical documents such as a hospital discharge summary or an imaging (MRI/X-ray/CT) screenshot, possibly scanned or photographed.
 
-You must output your answer in exactly two sections, in this exact format and order, with nothing before, between, or after them except the section headers themselves:
+You must output your answer in exactly three sections, in this exact format and order, with nothing before, between, or after them except the section headers themselves:
 
 ${MARKERS_HEADER}
 (lab marker lines go here, or leave this section empty if there are none)
 ${HISTORY_HEADER}
 (clinical history summary goes here, or the single word "None" if there are no non-lab clinical documents)
+${PATIENT_HEADER}
+(four patient-identity lines go here — see Section 3 instructions)
 
-=== Section 1: ${MARKERS_HEADER} ===
+=== Section 1 — ${MARKERS_HEADER} ===
 Find every lab test result on any lab-report pages and output them as plain "Parameter: value" lines, one per line. No headings, no commentary, no markdown, no bullet points.
 - Use the exact parameter names from this list whenever the test matches one of them (case does not matter, but use these exact words):
 ${KNOWN_PARAMETERS}
@@ -84,18 +88,47 @@ ${KNOWN_PARAMETERS}
 - Do not include patient name, age, dates, lab name, or any other non-test-result information in this section.
 - Non-lab pages (discharge summaries, imaging screenshots) have no lines here — their content goes in section 2 instead.
 
-=== Section 2: ${HISTORY_HEADER} ===
+=== Section 2 — ${HISTORY_HEADER} ===
 If any of the pages are a hospital discharge summary, clinic letter, or imaging report/screenshot (MRI, X-ray, CT, ultrasound, etc.) rather than a lab results table, summarize the clinically relevant content in a few short plain-language bullet lines (each starting with "- "), covering whichever of these are present:
 - Final diagnosis / clinical impression
 - Key imaging findings (in plain language, e.g. "MRI showed a bulging disc at C5/C6 and C6/C7 with nerve compression")
 - Procedures or treatment given
 - Follow-up plan (next clinic visit, referrals, medical leave)
-Keep it factual and attributed to the source document (e.g. "Per discharge summary from [hospital]: ..."), not your own medical opinion. Do not invent details that aren't on the page. If there are no such documents among the pages, output exactly "None" for this section.`;
+Keep it factual and attributed to the source document (e.g. "Per discharge summary from [hospital]: ..."), not your own medical opinion. Do not invent details that aren't on the page. If there are no such documents among the pages, output exactly "None" for this section.
+
+=== Section 3 — ${PATIENT_HEADER} ===
+Look at the patient identification area printed on the document (usually near the top of a lab report, alongside the lab/clinic letterhead — fields like NAME, AGE/GENDER, DOB, NRIC). Output exactly four lines, in this exact format:
+Full Name: <name exactly as printed, or Unknown>
+Age: <age in whole years as a plain integer, or Unknown>
+Gender: <Male or Female, or Unknown>
+NRIC: <the Malaysian NRIC/IC number exactly as printed, digits only or with dashes, or Unknown>
+Only transcribe what is explicitly printed on the document itself — never guess or infer a field from another (e.g. don't guess gender from the name). If age is only given as "55 years 2 months", output just the whole-year integer 55. If a field is missing, unclear, or you're not confident, output Unknown for that line rather than guessing.`;
+
+export interface PatientInfo {
+  fullName: string | null;
+  age: number | null;
+  gender: string | null;
+  nric: string | null;
+}
 
 export interface ExtractResult {
   markerText: string;
   clinicalHistory: string | null;
+  patientInfo: PatientInfo;
   filesProcessed: number;
+}
+
+function parsePatientInfo(section: string): PatientInfo {
+  const nameMatch = section.match(/Full Name:\s*(.*)/i);
+  const ageMatch = section.match(/Age:\s*(.*)/i);
+  const genderMatch = section.match(/Gender:\s*(.*)/i);
+  const nricMatch = section.match(/NRIC:\s*(.*)/i);
+  return {
+    fullName: normalizeFullName(nameMatch?.[1]),
+    age: normalizeAge(ageMatch?.[1]),
+    gender: normalizeGender(genderMatch?.[1]),
+    nric: normalizeNric(nricMatch?.[1]),
+  };
 }
 
 export async function extractMarkersFromFiles(fileUrls: string[]): Promise<ExtractResult> {
@@ -146,25 +179,36 @@ export async function extractMarkersFromFiles(fileUrls: string[]): Promise<Extra
     throw new Error("Could not extract anything from the uploaded file(s).");
   }
 
-  const historyIdx = fullText.indexOf(HISTORY_HEADER);
   const markersIdx = fullText.indexOf(MARKERS_HEADER);
+  const historyIdx = fullText.indexOf(HISTORY_HEADER);
+  const patientIdx = fullText.indexOf(PATIENT_HEADER);
+
+  // Each section runs from just after its own header up to whichever of the
+  // other two headers comes next in the text (falling back to the end of
+  // the string) — this keeps parsing correct regardless of a model
+  // occasionally reordering sections.
+  const nextHeaderAfter = (from: number): number => {
+    const candidates = [historyIdx, patientIdx].filter((i) => i > from);
+    return candidates.length > 0 ? Math.min(...candidates) : fullText.length;
+  };
 
   let markerSection = markersIdx >= 0 ? fullText.slice(markersIdx + MARKERS_HEADER.length) : fullText;
-  if (historyIdx >= 0) {
-    markerSection = fullText.slice(
-      markersIdx >= 0 ? markersIdx + MARKERS_HEADER.length : 0,
-      historyIdx,
-    );
+  if (markersIdx >= 0) {
+    markerSection = fullText.slice(markersIdx + MARKERS_HEADER.length, nextHeaderAfter(markersIdx));
   }
-  const historySection = historyIdx >= 0 ? fullText.slice(historyIdx + HISTORY_HEADER.length) : "";
+  const historySection =
+    historyIdx >= 0 ? fullText.slice(historyIdx + HISTORY_HEADER.length, nextHeaderAfter(historyIdx)) : "";
+  const patientSection =
+    patientIdx >= 0 ? fullText.slice(patientIdx + PATIENT_HEADER.length, nextHeaderAfter(patientIdx)) : "";
 
   const markerText = markerSection.trim();
   const historyTrimmed = historySection.trim();
   const clinicalHistory = historyTrimmed.length === 0 || /^none\.?$/i.test(historyTrimmed) ? null : historyTrimmed;
+  const patientInfo = parsePatientInfo(patientSection);
 
   if (!markerText && !clinicalHistory) {
     throw new Error("Could not extract any readable values or clinical history from the uploaded file(s).");
   }
 
-  return { markerText, clinicalHistory, filesProcessed: urls.length };
+  return { markerText, clinicalHistory, patientInfo, filesProcessed: urls.length };
 }

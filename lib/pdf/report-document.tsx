@@ -24,6 +24,7 @@ const s = StyleSheet.create({
   coverRule: { width: 90, height: 1, backgroundColor: GOLD, marginVertical: 18 },
   coverTitleBM: { fontFamily: "Times-Italic", fontSize: 12, color: "#6B6355", textAlign: "center", marginBottom: 30 },
   coverName: { fontFamily: "Times-Bold", fontSize: 18, color: INK, textAlign: "center" },
+  coverNric: { fontSize: 11, color: "#6B6355", textAlign: "center", marginTop: 5, letterSpacing: 0.5 },
   coverSub: { fontSize: 9.5, color: "#6B6355", textAlign: "center", marginTop: 6, letterSpacing: 1 },
   coverFooter: { position: "absolute", bottom: 34, alignSelf: "center", fontSize: 8.5, color: "#9C9284", letterSpacing: 2 },
 
@@ -88,9 +89,10 @@ function Footer() {
 }
 
 export function ReportDocument({
-  report, customerName, age, gender, referenceCode, submittedAt, reviewStatus, clinicalHistory,
+  report, customerName, age, gender, nric, referenceCode, submittedAt, reviewStatus, clinicalHistory,
 }: {
   report: StructuredReport; customerName: string; age?: number | null; gender?: string | null;
+  nric?: string | null;
   referenceCode: string; submittedAt: string; reviewStatus: string; clinicalHistory?: string | null;
 }) {
   const printedDate = new Date().toLocaleDateString("en-GB");
@@ -106,6 +108,7 @@ export function ReportDocument({
           <View style={s.coverRule} />
           <Text style={s.coverTitleBM}>Profil Kesihatan Peribadi Saya</Text>
           <Text style={s.coverName}>{customerName}</Text>
+          {nric ? <Text style={s.coverNric}>NRIC {nric}</Text> : null}
           <Text style={s.coverSub}>REFERENCE {referenceCode}</Text>
         </View>
         <Text style={s.coverFooter}>HEALTH BRIDGE SOLUTION</Text>
@@ -115,9 +118,10 @@ export function ReportDocument({
         <Masthead refCode={referenceCode} />
         <Text style={s.h1}>I. Patient Details</Text>
         <Text style={s.h1BM}>Butiran Pengguna</Text>
-        <View style={s.row}><Text style={s.label}>Name / Nama</Text><Text style={s.value}>{customerName}</Text></View>
-        <View style={s.row}><Text style={s.label}>Age / Umur</Text><Text style={s.value}>{age ?? "—"}</Text></View>
-        <View style={s.row}><Text style={s.label}>Gender / Jantina</Text><Text style={s.value}>{gender ?? "—"}</Text></View>
+        <View style={s.row}><Text style={s.label}>Name / Nama</Text><Text style={s.value}>{customerName || ""}</Text></View>
+        <View style={s.row}><Text style={s.label}>Age / Umur</Text><Text style={s.value}>{age ?? ""}</Text></View>
+        <View style={s.row}><Text style={s.label}>NRIC / No. Kad Pengenalan</Text><Text style={s.value}>{nric ?? ""}</Text></View>
+        <View style={s.row}><Text style={s.label}>Gender / Jantina</Text><Text style={s.value}>{gender ?? ""}</Text></View>
         <View style={s.row}><Text style={s.label}>Sample Date</Text><Text style={s.value}>{sampleDate}</Text></View>
         <View style={s.row}><Text style={s.label}>Report Printed</Text><Text style={s.value}>{printedDate}</Text></View>
 
