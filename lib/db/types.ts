@@ -10,6 +10,7 @@ export type ReportType =
 export type ReportStatus = "received" | "reviewing" | "completed" | "delivered";
 export type PaymentStatus = "unpaid" | "paid" | "waived";
 export type ReviewStatus = "unreviewed" | "approved" | "edited" | "rejected";
+export type FollowUpStatus = "new" | "contacted" | "scheduled" | "done";
 
 export interface ReportSubmission {
   id: string;
@@ -45,6 +46,7 @@ export interface ReportSubmission {
   ai_structured_result: unknown | null;
   generated_pdf_url: string | null;
   generated_pdf_generated_at: string | null;
+  follow_up_status: FollowUpStatus;
 }
 
 export interface ReportDelivery {
@@ -58,6 +60,14 @@ export interface ReportDelivery {
   email_sent_at: string | null;
   email_sent_to: string | null;
   email_send_error: string | null;
+}
+
+export interface FollowUpNote {
+  id: string;
+  submission_id: string;
+  note: string;
+  author: string;
+  created_at: string;
 }
 
 export interface CustomerFeedback {

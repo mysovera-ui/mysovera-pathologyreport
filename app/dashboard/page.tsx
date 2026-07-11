@@ -34,12 +34,26 @@ export default async function DashboardPage() {
               All report submissions, newest first.
             </p>
           </div>
-          <Link
-            href="/dashboard/feedback"
-            className="text-sm font-medium text-teal-700 hover:underline whitespace-nowrap"
-          >
-            View customer feedback →
-          </Link>
+          <div className="flex flex-col items-end gap-1">
+            <Link
+              href="/dashboard/feedback"
+              className="text-sm font-medium text-teal-700 hover:underline whitespace-nowrap"
+            >
+              View customer feedback →
+            </Link>
+            <Link
+              href="/dashboard/follow-ups"
+              className="text-sm font-medium text-teal-700 hover:underline whitespace-nowrap"
+            >
+              Follow-up requests →
+            </Link>
+            <Link
+              href="/dashboard/analytics"
+              className="text-sm font-medium text-teal-700 hover:underline whitespace-nowrap"
+            >
+              Analytics →
+            </Link>
+          </div>
         </div>
 
         {error && (

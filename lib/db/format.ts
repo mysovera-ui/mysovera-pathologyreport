@@ -30,3 +30,10 @@ export function formatDateTime(d: string | null): string {
     minute: "2-digit",
   });
 }
+
+export const FOLLOW_UP_STYLES: Record<string, string> = {
+  new: "bg-amber-100 text-amber-800",
+  contacted: "bg-blue-100 text-blue-800",
+  scheduled: "bg-purple-100 text-purple-800",
+  done: "bg-green-100 text-green-800",
+};
