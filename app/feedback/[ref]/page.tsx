@@ -63,6 +63,18 @@ export default async function FeedbackPage({
             <FeedbackForm submissionId={submission.id} />
           )}
         </div>
+
+        <div className="mt-6 rounded-xl border border-dashed border-teal-200 bg-teal-50 p-5 text-center">
+          <p className="text-sm font-medium text-teal-900">
+            Want a nutritionist or doctor to walk through your results with you?
+          </p>
+          <Link
+            href={`/consultation/${submission.reference_code}`}
+            className="mt-2 inline-block text-sm font-semibold text-teal-700 hover:underline"
+          >
+            Request a consultation →
+          </Link>
+        </div>
       </div>
     </main>
   );

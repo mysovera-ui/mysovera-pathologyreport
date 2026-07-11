@@ -11,6 +11,7 @@ export type ReportStatus = "received" | "reviewing" | "completed" | "delivered";
 export type PaymentStatus = "unpaid" | "paid" | "waived";
 export type ReviewStatus = "unreviewed" | "approved" | "edited" | "rejected";
 export type FollowUpStatus = "new" | "contacted" | "scheduled" | "done";
+export type ConsultationType = "nutritionist" | "doctor" | "either";
 
 export interface ReportSubmission {
   id: string;
@@ -60,6 +61,19 @@ export interface ReportDelivery {
   email_sent_at: string | null;
   email_sent_to: string | null;
   email_send_error: string | null;
+}
+
+export interface ConsultationRequest {
+  id: string;
+  submission_id: string;
+  customer_name: string;
+  email: string;
+  phone: string | null;
+  consultation_type: ConsultationType;
+  preferred_time: string | null;
+  notes: string | null;
+  status: FollowUpStatus;
+  created_at: string;
 }
 
 export interface FollowUpNote {

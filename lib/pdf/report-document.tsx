@@ -292,6 +292,23 @@ export function ReportDocument({
           </View>
         )}
 
+        {report.doctorQuestions.length > 0 && (
+          <>
+            <View style={s.goldRule} />
+            <Text style={s.h1}>VI. Questions to Ask Your Doctor</Text>
+            <Text style={s.h1BM}>Soalan untuk Doktor Anda</Text>
+            <Text style={{ fontSize: 8, color: "#8A7F6C", fontFamily: "Times-Italic", marginBottom: 6 }}>
+              Bring this list to your appointment — it&apos;s here to help the conversation, not replace it.
+            </Text>
+            {report.doctorQuestions.map((q, i) => (
+              <View style={s.bulletRow} key={i} wrap={false}>
+                <Text style={s.bulletDot}>—</Text>
+                <View style={s.bulletText}><Text>{q.en}</Text><Text style={s.bmText}>{q.bm}</Text></View>
+              </View>
+            ))}
+          </>
+        )}
+
         <View style={s.disclaimerBox}>
           <Text style={s.disclaimerTitle}>Medical Disclaimer</Text>
           <Text>

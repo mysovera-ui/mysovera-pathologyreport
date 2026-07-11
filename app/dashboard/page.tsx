@@ -48,6 +48,12 @@ export default async function DashboardPage() {
               Follow-up requests →
             </Link>
             <Link
+              href="/dashboard/consultations"
+              className="text-sm font-medium text-teal-700 hover:underline whitespace-nowrap"
+            >
+              Consultation requests →
+            </Link>
+            <Link
               href="/dashboard/analytics"
               className="text-sm font-medium text-teal-700 hover:underline whitespace-nowrap"
             >

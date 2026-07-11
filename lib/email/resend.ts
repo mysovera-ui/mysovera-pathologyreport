@@ -21,12 +21,14 @@ export function deliveryEmailHtml({
   pdfUrl,
   deliveredBy,
   feedbackUrl,
+  consultationUrl,
 }: {
   customerName: string;
   referenceCode: string;
   pdfUrl: string;
   deliveredBy: string;
   feedbackUrl: string;
+  consultationUrl?: string;
 }): string {
   const firstName = customerName.split(" ")[0];
   return `
@@ -43,6 +45,11 @@ export function deliveryEmailHtml({
       This is an educational summary, not a diagnosis. Please discuss these results with your doctor,
       especially before starting any supplement or treatment.
     </p>
+    ${consultationUrl ? `
+    <p style="margin-top: 20px;">
+      Want a nutritionist or doctor to walk through your results with you? —
+      <a href="${consultationUrl}" style="color:#0F766E;">request a consultation</a>.
+    </p>` : ""}
     <p style="margin-top: 24px;">
       We'd love your feedback —
       <a href="${feedbackUrl}" style="color:#0F766E;">let us know how we did</a>.
@@ -60,6 +67,7 @@ export async function sendDeliveryEmail(opts: {
   pdfUrl: string;
   deliveredBy: string;
   feedbackUrl: string;
+  consultationUrl?: string;
 }) {
   const resend = getClient();
   const html = deliveryEmailHtml(opts);
@@ -119,6 +127,110 @@ export async function sendPaymentRequestEmail(opts: {
     from: FROM_ADDRESS,
     to: opts.to,
     subject: `Payment required to receive your health report (${opts.referenceCode})`,
+    html,
+  });
+  if (error) {
+    throw new Error(error.message || "Failed to send email");
+  }
+  return data;
+}
+
+const TEAM_NOTIFICATION_EMAIL = process.env.TEAM_NOTIFICATION_EMAIL || "mysovera@gmail.com";
+
+export function consultationRequestConfirmationHtml({
+  customerName,
+  referenceCode,
+  consultationType,
+}: {
+  customerName: string;
+  referenceCode: string;
+  consultationType: string;
+}): string {
+  const firstName = customerName.split(" ")[0];
+  return `
+  <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1F2937;">
+    <p style="color:#0F766E; font-weight:600; margin-bottom: 4px;">Health Bridge Solution</p>
+    <h2 style="margin-top: 0;">We've got your request, ${firstName}</h2>
+    <p>
+      Thanks for requesting a <strong>${consultationType}</strong> consultation (reference <strong>${referenceCode}</strong>).
+      Our team will reach out to you by email or phone shortly to arrange a time.
+    </p>
+    <p style="color:#6B7280; font-size: 14px;">
+      This is a request, not a confirmed booking yet — a real person from our team will follow up with you directly.
+    </p>
+    <p style="color:#9CA3AF; font-size: 12px; margin-top: 32px;">
+      Health Bridge Solution
+    </p>
+  </div>`;
+}
+
+export async function sendConsultationRequestConfirmation(opts: {
+  to: string;
+  customerName: string;
+  referenceCode: string;
+  consultationType: string;
+}) {
+  const resend = getClient();
+  const html = consultationRequestConfirmationHtml(opts);
+  const { data, error } = await resend.emails.send({
+    from: FROM_ADDRESS,
+    to: opts.to,
+    subject: `We've received your consultation request (${opts.referenceCode})`,
+    html,
+  });
+  if (error) {
+    throw new Error(error.message || "Failed to send email");
+  }
+  return data;
+}
+
+export function consultationRequestTeamAlertHtml({
+  customerName,
+  referenceCode,
+  email,
+  phone,
+  consultationType,
+  preferredTime,
+  notes,
+}: {
+  customerName: string;
+  referenceCode: string;
+  email: string;
+  phone?: string | null;
+  consultationType: string;
+  preferredTime?: string | null;
+  notes?: string | null;
+}): string {
+  return `
+  <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1F2937;">
+    <p style="color:#0F766E; font-weight:600; margin-bottom: 4px;">New consultation request</p>
+    <h2 style="margin-top: 0;">${customerName} (${referenceCode})</h2>
+    <p><strong>Type:</strong> ${consultationType}</p>
+    <p><strong>Email:</strong> ${email}</p>
+    ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ""}
+    ${preferredTime ? `<p><strong>Preferred time:</strong> ${preferredTime}</p>` : ""}
+    ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ""}
+    <p style="color:#6B7280; font-size: 14px; margin-top: 24px;">
+      Manage this in the dashboard under Consultations.
+    </p>
+  </div>`;
+}
+
+export async function sendConsultationRequestTeamAlert(opts: {
+  customerName: string;
+  referenceCode: string;
+  email: string;
+  phone?: string | null;
+  consultationType: string;
+  preferredTime?: string | null;
+  notes?: string | null;
+}) {
+  const resend = getClient();
+  const html = consultationRequestTeamAlertHtml(opts);
+  const { data, error } = await resend.emails.send({
+    from: FROM_ADDRESS,
+    to: TEAM_NOTIFICATION_EMAIL,
+    subject: `New consultation request from ${opts.customerName} (${opts.referenceCode})`,
     html,
   });
   if (error) {

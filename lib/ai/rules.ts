@@ -73,6 +73,7 @@ export interface StructuredReport {
   overallRiskReasonBM: string;
   keyProblems: KeyProblem[];
   recommendations: Recommendations;
+  doctorQuestions: Bilingual[];
   markersDetected: string[];
   riskFlags: string[];
   confidence: number;
@@ -624,6 +625,99 @@ const RECOMMENDATION_LIBRARY: Record<
   },
 };
 
+// Tailored questions to bring to a doctor's appointment, keyed by panel.
+// These are deliberately phrased as questions FOR the doctor, not answers —
+// the goal is to help someone prepare for that conversation, never to
+// substitute for it.
+const DOCTOR_QUESTIONS_LIBRARY: Record<string, Bilingual[]> = {
+  lipid: [
+    {
+      en: "Given my cholesterol/triglyceride numbers, would you recommend lifestyle changes alone first, or should we also discuss medication?",
+      bm: "Berdasarkan angka kolesterol/trigliserida saya, adakah anda mencadangkan perubahan gaya hidup sahaja dahulu, atau perlukah kita bincangkan ubat-ubatan juga?",
+    },
+    {
+      en: "How often should I repeat my lipid profile to track progress?",
+      bm: "Berapa kerap saya perlu mengulangi profil lipid untuk memantau kemajuan?",
+    },
+  ],
+  diabetes: [
+    {
+      en: "Does my HbA1c/blood sugar result mean I'm at risk of pre-diabetes or diabetes, and what's the next monitoring step?",
+      bm: "Adakah keputusan HbA1c/gula darah saya bermaksud saya berisiko pra-diabetes atau diabetes, dan apakah langkah pemantauan seterusnya?",
+    },
+  ],
+  kidney: [
+    {
+      en: "Are my kidney function results (e.g. creatinine, eGFR, uric acid) a one-off finding or something to monitor over time?",
+      bm: "Adakah keputusan fungsi buah pinggang saya (contoh: kreatinin, eGFR, asid urik) penemuan sekali sahaja atau perlu dipantau dari semasa ke semasa?",
+    },
+    {
+      en: "Should I adjust my fluid intake, salt intake, or any medications based on these results?",
+      bm: "Perlukah saya melaraskan pengambilan cecair, garam, atau sebarang ubat berdasarkan keputusan ini?",
+    },
+  ],
+  liver: [
+    {
+      en: "Do my liver function results suggest I should reduce alcohol intake, adjust medication, or investigate further?",
+      bm: "Adakah keputusan fungsi hati saya mencadangkan saya perlu mengurangkan alkohol, melaraskan ubat, atau menyiasat lebih lanjut?",
+    },
+  ],
+  urinalysis: [
+    {
+      en: "Do my urinalysis results need a repeat test or further investigation (e.g. urine culture)?",
+      bm: "Adakah keputusan urinalisis saya memerlukan ujian ulangan atau siasatan lanjut (contoh: kultur air kencing)?",
+    },
+  ],
+  thyroid: [
+    {
+      en: "Does my TSH result mean my thyroid is overactive, underactive, or borderline, and do I need further tests (e.g. T3/T4, antibodies)?",
+      bm: "Adakah keputusan TSH saya bermaksud tiroid saya terlalu aktif, kurang aktif, atau sempadan, dan adakah saya perlu ujian lanjut (contoh: T3/T4, antibodi)?",
+    },
+  ],
+  tumor_markers: [
+    {
+      en: "What does this tumor marker result mean in context, and is any follow-up imaging or repeat testing recommended?",
+      bm: "Apakah maksud keputusan penanda tumor ini dalam konteks, dan adakah pengimejan susulan atau ujian ulangan disyorkan?",
+    },
+  ],
+  h_pylori: [
+    {
+      en: "If H. pylori is positive, what treatment (e.g. antibiotic course) do you recommend, and should I be retested after treatment?",
+      bm: "Jika H. pylori positif, apakah rawatan (contoh: kursus antibiotik) yang anda syorkan, dan perlukah saya diuji semula selepas rawatan?",
+    },
+  ],
+  vitamin_d: [
+    {
+      en: "What Vitamin D supplementation dose and duration would you recommend for my level?",
+      bm: "Apakah dos dan tempoh suplemen Vitamin D yang anda syorkan untuk tahap saya?",
+    },
+  ],
+  vitamin_b12: [
+    {
+      en: "Is my Vitamin B12 level low enough to need supplementation or injections, and could it explain any symptoms I have?",
+      bm: "Adakah tahap Vitamin B12 saya cukup rendah untuk memerlukan suplemen atau suntikan, dan bolehkah ia menjelaskan sebarang simptom yang saya ada?",
+    },
+  ],
+  iron_studies: [
+    {
+      en: "Do my iron study results point to iron-deficiency anaemia, and if so, what's the recommended treatment and how soon should I retest?",
+      bm: "Adakah keputusan kajian zat besi saya menunjukkan anemia kekurangan zat besi, dan jika ya, apakah rawatan disyorkan dan bila saya perlu diuji semula?",
+    },
+  ],
+  hormone: [
+    {
+      en: "What do these hormone results mean for my symptoms, and is any further hormonal work-up needed?",
+      bm: "Apakah maksud keputusan hormon ini untuk simptom saya, dan adakah pemeriksaan hormon lanjut diperlukan?",
+    },
+  ],
+  hematology: [
+    {
+      en: "Do my full blood count results need further investigation (e.g. repeat test, iron studies, referral)?",
+      bm: "Adakah keputusan kiraan darah penuh saya memerlukan siasatan lanjut (contoh: ujian ulangan, kajian zat besi, rujukan)?",
+    },
+  ],
+};
+
 export function generateStructuredReport(
   markerInput: string,
   opts?: { customerName?: string },
@@ -758,6 +852,25 @@ export function generateStructuredReport(
   const confidence = recognizedCount > 0 ? Math.min(0.95, 0.55 + recognizedCount * 0.03) : 0;
   const urgencyScore = Math.min(10, outOfRangeCount * 2);
 
+  // Questions to bring to a doctor's appointment — one panel's worth of
+  // questions at a time, capped so the list stays usable rather than
+  // overwhelming, plus a closing prompt to bring the report itself.
+  const doctorQuestions: Bilingual[] = [];
+  for (const p of flaggedPanels) {
+    const questions = DOCTOR_QUESTIONS_LIBRARY[p.key];
+    if (!questions) continue;
+    for (const q of questions) {
+      if (doctorQuestions.length >= 6) break;
+      doctorQuestions.push(q);
+    }
+  }
+  if (doctorQuestions.length > 0) {
+    doctorQuestions.push({
+      en: "Bring this report with you — which results, if any, need repeat testing or closer follow-up?",
+      bm: "Bawa laporan ini bersama anda — keputusan mana, jika ada, yang memerlukan ujian ulangan atau susulan lebih dekat?",
+    });
+  }
+
   return {
     panels,
     overallRisk,
@@ -771,6 +884,7 @@ export function generateStructuredReport(
         : "Semua penanda yang dimasukkan berada dalam julat biasa.",
     keyProblems,
     recommendations,
+    doctorQuestions,
     markersDetected,
     riskFlags,
     confidence,
@@ -842,6 +956,11 @@ export function renderReportText(report: StructuredReport, customerName?: string
       lines.push("Sleep & Stress:");
       rec.sleep.forEach((s) => lines.push(`  • ${s.en}`));
     }
+    lines.push("");
+  }
+  if (report.doctorQuestions.length > 0) {
+    lines.push("=== QUESTIONS TO ASK YOUR DOCTOR ===");
+    report.doctorQuestions.forEach((q) => lines.push(`  • ${q.en}`));
     lines.push("");
   }
   lines.push(

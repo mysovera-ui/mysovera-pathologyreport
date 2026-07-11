@@ -40,6 +40,7 @@ export async function sendDeliveryEmailAction(submissionId: string): Promise<Ema
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
   const feedbackUrl = `${appUrl}/feedback/${submission.reference_code}`;
+  const consultationUrl = `${appUrl}/consultation/${submission.reference_code}`;
 
   try {
     await sendDeliveryEmail({
@@ -49,6 +50,7 @@ export async function sendDeliveryEmailAction(submissionId: string): Promise<Ema
       pdfUrl: delivery.pdf_url,
       deliveredBy: delivery.delivered_by || "Health Bridge Solution",
       feedbackUrl,
+      consultationUrl,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
