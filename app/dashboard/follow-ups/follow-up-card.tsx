@@ -35,18 +35,14 @@ export function FollowUpCard({
 
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Link
-            href={`/dashboard/${submissionId}`}
-            className="font-mono text-sm text-teal-700 hover:underline"
-          >
-            {referenceCode}
-          </Link>
-          <p className="mt-0.5 font-semibold text-neutral-900">{customerName}</p>
-          <p className="text-xs text-neutral-500">{reportType ?? "—"}</p>
-        </div>
-        <div className="flex gap-1.5">
+      <div className="flex items-start justify-between gap-3">
+        <Link
+          href={`/dashboard/${submissionId}`}
+          className="font-mono text-sm text-teal-700 hover:underline shrink-0"
+        >
+          {referenceCode}
+        </Link>
+        <div className="flex gap-1.5 shrink-0">
           {STATUS_OPTIONS.map((opt) => (
             <button
               key={opt}
@@ -69,6 +65,8 @@ export function FollowUpCard({
           ))}
         </div>
       </div>
+      <p className="mt-2 font-semibold text-neutral-900">{customerName}</p>
+      <p className="text-xs text-neutral-500">{reportType ?? "—"}</p>
 
       {(rating || feedbackText) && (
         <div className="mt-3 rounded-lg bg-neutral-50 px-3 py-2 text-sm text-neutral-600">
