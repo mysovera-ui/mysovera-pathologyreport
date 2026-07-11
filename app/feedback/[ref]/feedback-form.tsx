@@ -34,13 +34,13 @@ export function FeedbackForm({ submissionId }: { submissionId: string }) {
           How would you rate the report you received?
         </label>
         <input type="hidden" name="rating" value={rating} />
-        <div className="flex gap-1">
+        <div className="flex gap-1 -ml-2">
           {[1, 2, 3, 4, 5].map((n) => (
             <button
               key={n}
               type="button"
               onClick={() => setRating(n)}
-              className={`text-3xl leading-none ${n <= rating ? "text-amber-500" : "text-neutral-300"}`}
+              className={`text-3xl leading-none p-2 ${n <= rating ? "text-amber-500" : "text-neutral-300"}`}
               aria-label={`${n} star`}
             >
               ★

@@ -21,7 +21,7 @@ export default async function SubmittedPage({
 
   return (
     <main className="min-h-screen bg-neutral-50 flex items-center justify-center px-6">
-      <div className="max-w-md w-full text-center bg-white rounded-xl border border-neutral-200 p-10">
+      <div className="max-w-md w-full text-center bg-white rounded-xl border border-neutral-200 p-6 sm:p-10">
         <div className="mx-auto w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 text-2xl">
           ✓
         </div>

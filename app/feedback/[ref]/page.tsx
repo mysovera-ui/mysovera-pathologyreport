@@ -21,7 +21,7 @@ export default async function FeedbackPage({
   if (!submission) {
     return (
       <main className="min-h-screen bg-neutral-50 flex items-center justify-center px-6">
-        <div className="max-w-md w-full text-center bg-white rounded-xl border border-neutral-200 p-10">
+        <div className="max-w-md w-full text-center bg-white rounded-xl border border-neutral-200 p-6 sm:p-10">
           <h1 className="text-lg font-semibold text-neutral-900">
             Reference not found
           </h1>

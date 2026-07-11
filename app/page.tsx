@@ -24,16 +24,16 @@ export default function Home() {
           into a plain-language summary you can actually understand — before
           you see your doctor. No diagnosis, just clarity.
         </p>
-        <div className="mt-8 flex items-center justify-center gap-4">
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
           <Link
             href="/submit"
-            className="inline-flex items-center rounded-lg bg-teal-700 px-6 py-3 text-white font-semibold hover:bg-teal-800 transition-colors"
+            className="w-full sm:w-auto inline-flex items-center justify-center rounded-lg bg-teal-700 px-6 py-3 text-white font-semibold hover:bg-teal-800 transition-colors"
           >
             Submit your report
           </Link>
           <Link
             href="/dashboard"
-            className="inline-flex items-center rounded-lg border border-neutral-300 px-6 py-3 text-neutral-700 font-semibold hover:bg-neutral-100 transition-colors"
+            className="w-full sm:w-auto inline-flex items-center justify-center rounded-lg border border-neutral-300 px-6 py-3 text-neutral-700 font-semibold hover:bg-neutral-100 transition-colors"
           >
             Team dashboard
           </Link>
