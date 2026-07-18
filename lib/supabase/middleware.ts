@@ -63,6 +63,19 @@ export async function updateSession(request: NextRequest) {
       }
     }
 
+    // Customer self-serve portal: any verified logged-in email may in --
+    // unlike /dashboard there's no allowlist, since every customer who
+    // submitted a report is entitled to see their own history. The
+    // customers_read_own_submissions RLS policy (migration 0018) is what
+    // actually restricts what they can see once in, scoped to their own
+    // email -- this check is just the login gate.
+    if (path.startsWith("/portal") && path !== "/portal/login") {
+      if (!user) {
+        const redirectUrl = new URL("/portal/login", request.url);
+        return NextResponse.redirect(redirectUrl);
+      }
+    }
+
     return response;
   } catch {
     // Never let an auth hiccup crash the entire edge middleware

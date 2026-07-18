@@ -41,6 +41,12 @@ export default function Home() {
         <p className="mt-4 text-sm text-neutral-500">
           Reports delivered within 24–48 hours by email.
         </p>
+        <p className="mt-2 text-sm text-neutral-500">
+          Submitted before?{" "}
+          <Link href="/portal/login" className="text-teal-700 hover:underline">
+            View your report history
+          </Link>
+        </p>
       </section>
 
       <section className="max-w-4xl mx-auto px-6 pb-20">
