@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { logAudit } from "@/lib/db/audit";
 import { createBill } from "@/lib/billplz/client";
 import { sendPaymentRequestEmail } from "@/lib/email/resend";
-import { REPORT_PRICE_CENTS } from "@/lib/billplz/pricing";
+import { priceCentsForTier } from "@/lib/billplz/pricing";
 import { revalidatePath } from "next/cache";
 
 export type PaymentLinkState = { error?: string; success?: boolean };
@@ -14,7 +14,7 @@ export async function sendPaymentLinkAction(submissionId: string): Promise<Payme
 
   const { data: submission, error: subError } = await supabase
     .from("report_submissions")
-    .select("customer_name, email, reference_code, report_status, payment_status, billplz_bill_id, billplz_url")
+    .select("customer_name, email, reference_code, report_status, payment_status, billplz_bill_id, billplz_url, report_tier")
     .eq("id", submissionId)
     .single();
 
@@ -29,6 +29,7 @@ export async function sendPaymentLinkAction(submissionId: string): Promise<Payme
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+  const amountCents = priceCentsForTier(submission.report_tier);
 
   let billId = submission.billplz_bill_id;
   let billUrl = submission.billplz_url;
@@ -40,7 +41,7 @@ export async function sendPaymentLinkAction(submissionId: string): Promise<Payme
       const bill = await createBill({
         name: submission.customer_name,
         email: submission.email,
-        amountCents: REPORT_PRICE_CENTS,
+        amountCents,
         description: `Health Bridge Solution report (${submission.reference_code})`,
         referenceCode: submission.reference_code,
         callbackUrl: `${appUrl}/api/billplz/callback`,
@@ -81,7 +82,7 @@ export async function sendPaymentLinkAction(submissionId: string): Promise<Payme
       customerName: submission.customer_name,
       referenceCode: submission.reference_code,
       paymentUrl: billUrl!,
-      amountLabel: `RM ${REPORT_PRICE_CENTS / 100}`,
+      amountLabel: `RM ${amountCents / 100}`,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

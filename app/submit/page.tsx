@@ -5,6 +5,9 @@ import Link from "next/link";
 import { submitReportAction, type SubmitFormState } from "./actions";
 import { PANEL_OPTIONS } from "@/lib/ai/rules";
 import { createClient } from "@/lib/supabase/client";
+import { TIER_LABELS, TIER_DESCRIPTIONS, TIER_PRICING_MYR, type ReportTier } from "@/lib/billplz/pricing";
+
+const TIER_ORDER: ReportTier[] = ["basic", "standard", "premium"];
 
 const initialState: SubmitFormState = {};
 const MAX_FILES = 10;
@@ -21,6 +24,8 @@ export default function SubmitPage() {
   );
   const [fileEntries, setFileEntries] = useState<FileEntry[]>([]);
   const [fileError, setFileError] = useState<string>("");
+  const [tier, setTier] = useState<ReportTier>("standard");
+  const [selectedPanels, setSelectedPanels] = useState<string[]>([]);
 
   const uploadedFiles: UploadedFile[] = fileEntries
     .filter((f): f is FileEntry & { status: "done"; url: string } => f.status === "done" && !!f.url)
@@ -137,20 +142,69 @@ export default function SubmitPage() {
             </Field>
           </div>
 
+          <Field label="Choose your report package">
+            <input type="hidden" name="report_tier" value={tier} />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {TIER_ORDER.map((t) => (
+                <button
+                  type="button"
+                  key={t}
+                  onClick={() => {
+                    setTier(t);
+                    if (t === "basic" && selectedPanels.length > 1) {
+                      setSelectedPanels((prev) => prev.slice(0, 1));
+                    }
+                  }}
+                  className={`text-left rounded-lg border p-3 transition-colors ${
+                    tier === t
+                      ? "border-teal-700 bg-teal-50 ring-1 ring-teal-700"
+                      : "border-neutral-300 bg-white hover:bg-neutral-50"
+                  }`}
+                >
+                  <span className="block text-sm font-semibold text-neutral-900">
+                    {TIER_LABELS[t]} — RM{TIER_PRICING_MYR[t]}
+                  </span>
+                  <span className="mt-1 block text-xs text-neutral-500">{TIER_DESCRIPTIONS[t]}</span>
+                </button>
+              ))}
+            </div>
+          </Field>
+
           <Field
-            label="Which panels does your report cover? (select all that apply)"
+            label={
+              tier === "basic"
+                ? "Which panel does your report cover? (choose one)"
+                : "Which panels does your report cover? (select all that apply)"
+            }
             error={state.fieldErrors?.report_panels}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2 rounded-lg border border-neutral-300 bg-white p-3">
               {PANEL_OPTIONS.map((p) => (
                 <label key={p.value} className="flex items-center gap-2 text-sm text-neutral-700">
-                  <input type="checkbox" name="report_panels" value={p.value} className="rounded" />
+                  <input
+                    type={tier === "basic" ? "radio" : "checkbox"}
+                    name="report_panels"
+                    value={p.value}
+                    checked={selectedPanels.includes(p.value)}
+                    onChange={(e) => {
+                      if (tier === "basic") {
+                        setSelectedPanels(e.target.checked ? [p.value] : []);
+                      } else {
+                        setSelectedPanels((prev) =>
+                          e.target.checked ? [...prev, p.value] : prev.filter((v) => v !== p.value),
+                        );
+                      }
+                    }}
+                    className="rounded"
+                  />
                   {p.label}
                 </label>
               ))}
             </div>
             <p className="mt-1 text-xs text-neutral-400">
-              Not sure? Just tick &ldquo;Other / Not Sure&rdquo; — our team will confirm from your uploaded report.
+              {tier === "basic"
+                ? "Basic covers a single panel — pick the one you want explained."
+                : "Not sure? Just tick \u201cOther / Not Sure\u201d — our team will confirm from your uploaded report."}
             </p>
           </Field>
 

@@ -9,7 +9,7 @@ export default async function DashboardPage() {
   const { data: submissions, error } = await supabase
     .from("report_submissions")
     .select(
-      "id, reference_code, customer_name, report_type, report_status, payment_status, submitted_at, ai_summary_review_status, urgency_score",
+      "id, reference_code, customer_name, report_type, report_status, payment_status, submitted_at, ai_summary_review_status, urgency_score, report_tier",
     )
     .order("urgency_score", { ascending: false, nullsFirst: false })
     .order("submitted_at", { ascending: false });
@@ -105,6 +105,11 @@ export default async function DashboardPage() {
                     </td>
                     <td className="px-4 py-3 text-neutral-900">
                       {s.customer_name}
+                      {s.report_tier === "premium" && (
+                        <span className="ml-2 inline-block rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-semibold align-middle">
+                          PREMIUM
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-neutral-600">
                       {s.report_type}

@@ -8,6 +8,7 @@ export type ReportType =
   | "other";
 
 export type ReportStatus = "received" | "reviewing" | "completed" | "delivered";
+export type ReportTier = "basic" | "standard" | "premium";
 export type PaymentStatus = "unpaid" | "paid" | "waived";
 export type ReviewStatus = "unreviewed" | "approved" | "edited" | "rejected";
 export type FollowUpStatus = "new" | "contacted" | "scheduled" | "done";
@@ -53,6 +54,7 @@ export interface ReportSubmission {
   extracted_nric: string | null;
   referring_doctor_name: string | null;
   referring_doctor_email: string | null;
+  report_tier: ReportTier;
   follow_up_status: FollowUpStatus;
 }
 

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { sendPaymentLinkAction } from "./payment-actions";
-import { REPORT_PRICE_MYR } from "@/lib/billplz/pricing";
+import { priceForTier } from "@/lib/billplz/pricing";
 
 export function PaymentLinkButton({
   submissionId,
@@ -10,13 +10,16 @@ export function PaymentLinkButton({
   reportStatus,
   paymentStatus,
   billplzUrl,
+  reportTier,
 }: {
   submissionId: string;
   customerEmail: string;
   reportStatus: string;
   paymentStatus: string;
   billplzUrl?: string | null;
+  reportTier: string;
 }) {
+  const price = priceForTier(reportTier);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -48,7 +51,7 @@ export function PaymentLinkButton({
         }}
         className="w-full rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
       >
-        {isPending ? "Sending…" : `Send RM ${REPORT_PRICE_MYR} payment link to ${customerEmail}`}
+        {isPending ? "Sending…" : `Send RM ${price} payment link to ${customerEmail}`}
       </button>
       {sent && (
         <p className="mt-2 text-xs text-teal-700">

@@ -3,6 +3,7 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { logAudit } from "@/lib/db/audit";
 import { redirect } from "next/navigation";
+import { isReportTier } from "@/lib/billplz/pricing";
 
 export type SubmitFormState = {
   error?: string;
@@ -20,6 +21,8 @@ export async function submitReportAction(
   const health_concern = String(formData.get("health_concern") || "").trim();
   const report_panels = formData.getAll("report_panels").map((v) => String(v));
   const symptoms_notes = String(formData.get("symptoms_notes") || "").trim();
+  const reportTierRaw = String(formData.get("report_tier") || "standard").trim();
+  const report_tier = isReportTier(reportTierRaw) ? reportTierRaw : "standard";
   // Files are uploaded client-side straight to Supabase Storage (see
   // submit/page.tsx) so they never pass through this server action's body —
   // Vercel functions cap request bodies at ~4.5MB, well under the up-to-10MB
@@ -42,6 +45,9 @@ export async function submitReportAction(
   if (!customer_name) fieldErrors.customer_name = "Name is required";
   if (!email || !email.includes("@")) fieldErrors.email = "A valid email is required";
   if (report_panels.length === 0) fieldErrors.report_panels = "Select at least one panel (or \"Other / Not Sure\")";
+  if (report_tier === "basic" && report_panels.length > 1) {
+    fieldErrors.report_panels = "Basic covers a single panel only — choose one, or pick Standard/Premium for full coverage.";
+  }
   if (!health_concern) fieldErrors.health_concern = "Tell us your concern in a few words";
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -62,6 +68,7 @@ export async function submitReportAction(
       health_concern,
       report_type: report_panels.join(", "),
       report_panels,
+      report_tier,
       symptoms_notes: symptoms_notes || null,
       file_url,
       file_urls,

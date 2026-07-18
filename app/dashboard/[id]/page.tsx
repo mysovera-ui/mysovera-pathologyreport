@@ -188,6 +188,7 @@ export default async function SubmissionDetailPage({
                 reportStatus={submission.report_status as ReportStatus}
                 paymentStatus={submission.payment_status as PaymentStatus}
                 billplzUrl={submission.billplz_url}
+                reportTier={submission.report_tier}
               />
             </section>
 

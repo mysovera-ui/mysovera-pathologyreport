@@ -6,7 +6,7 @@ import type { ConsultationRequest, FollowUpNote, FollowUpStatus } from "@/lib/db
 export const dynamic = "force-dynamic";
 
 interface RequestRow extends ConsultationRequest {
-  report_submissions: { reference_code: string } | null;
+  report_submissions: { reference_code: string; report_tier: string } | null;
 }
 
 const STATUS_ORDER: FollowUpStatus[] = ["new", "contacted", "scheduled", "done"];
@@ -16,7 +16,7 @@ export default async function ConsultationsPage() {
 
   const { data: requests, error } = await supabase
     .from("consultation_requests")
-    .select("*, report_submissions(reference_code)")
+    .select("*, report_submissions(reference_code, report_tier)")
     .order("created_at", { ascending: false })
     .returns<RequestRow[]>();
 
@@ -43,6 +43,11 @@ export default async function ConsultationsPage() {
     const statusA = STATUS_ORDER.indexOf(a.status);
     const statusB = STATUS_ORDER.indexOf(b.status);
     if (statusA !== statusB) return statusA - statusB;
+    // Premium-tier requests are fast-tracked -- surfaced first within the
+    // same status group so staff reach for them before the general queue.
+    const priorityA = a.report_submissions?.report_tier === "premium" ? 0 : 1;
+    const priorityB = b.report_submissions?.report_tier === "premium" ? 0 : 1;
+    if (priorityA !== priorityB) return priorityA - priorityB;
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
@@ -91,6 +96,7 @@ export default async function ConsultationsPage() {
                 status={r.status}
                 createdAt={r.created_at}
                 contactNotes={notesBySubmission.get(r.submission_id) ?? []}
+                isPriority={r.report_submissions?.report_tier === "premium"}
               />
             ))}
           </div>

@@ -27,6 +27,7 @@ export function ConsultationCard({
   status,
   createdAt,
   contactNotes,
+  isPriority,
 }: {
   requestId: string;
   submissionId: string;
@@ -40,6 +41,7 @@ export function ConsultationCard({
   status: FollowUpStatus;
   createdAt: string;
   contactNotes: FollowUpNote[];
+  isPriority?: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -48,14 +50,21 @@ export function ConsultationCard({
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-5">
+    <div className={`rounded-xl border bg-white p-5 ${isPriority ? "border-amber-300" : "border-neutral-200"}`}>
       <div className="flex items-start justify-between gap-3">
-        <Link
-          href={`/dashboard/${submissionId}`}
-          className="font-mono text-sm text-teal-700 hover:underline shrink-0"
-        >
-          {referenceCode}
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href={`/dashboard/${submissionId}`}
+            className="font-mono text-sm text-teal-700 hover:underline"
+          >
+            {referenceCode}
+          </Link>
+          {isPriority && (
+            <span className="inline-block rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-semibold">
+              PRIORITY
+            </span>
+          )}
+        </div>
         <div className="flex gap-1.5 shrink-0">
           {STATUS_OPTIONS.map((opt) => (
             <button
