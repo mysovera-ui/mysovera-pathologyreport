@@ -51,6 +51,8 @@ export interface ReportSubmission {
   extracted_age: number | null;
   extracted_gender: string | null;
   extracted_nric: string | null;
+  referring_doctor_name: string | null;
+  referring_doctor_email: string | null;
   follow_up_status: FollowUpStatus;
 }
 

@@ -9,6 +9,7 @@ import {
   type AiActionState,
 } from "./ai-actions";
 import { generatePdfAction } from "./pdf-actions";
+import { sendReferringDoctorReportAction } from "./referring-doctor-actions";
 import type { ReportSubmission } from "@/lib/db/types";
 
 const initialState: AiActionState = {};
@@ -36,9 +37,14 @@ export function AiDraftPanel({ submission }: { submission: ReportSubmission }) {
   );
   const [extractedGender, setExtractedGender] = useState(submission.extracted_gender ?? "");
   const [extractedNric, setExtractedNric] = useState(submission.extracted_nric ?? "");
+  const [referringDoctorName, setReferringDoctorName] = useState(submission.referring_doctor_name ?? "");
+  const [referringDoctorEmail, setReferringDoctorEmail] = useState(submission.referring_doctor_email ?? "");
   const [isExtracting, startExtracting] = useTransition();
   const [extractError, setExtractError] = useState<string | null>(null);
   const [extractInfo, setExtractInfo] = useState<string | null>(null);
+  const [isSendingToDoctor, startSendingToDoctor] = useTransition();
+  const [doctorSendError, setDoctorSendError] = useState<string | null>(null);
+  const [doctorSendSuccess, setDoctorSendSuccess] = useState(false);
 
   const hasUploadedFile =
     (submission.file_urls && submission.file_urls.length > 0) || !!submission.file_url;
@@ -62,6 +68,9 @@ export function AiDraftPanel({ submission }: { submission: ReportSubmission }) {
       setExtractedAge(result.extractedAge != null ? String(result.extractedAge) : "");
       setExtractedGender(result.extractedGender ?? "");
       setExtractedNric(result.extractedNric ?? "");
+      if (result.extractedReferringDoctor) {
+        setReferringDoctorName(result.extractedReferringDoctor);
+      }
       setExtractInfo(
         `Extracted from ${result.filesProcessed} file${result.filesProcessed === 1 ? "" : "s"}${
           result.clinicalHistory ? " — including a clinical history summary" : ""
@@ -166,6 +175,31 @@ export function AiDraftPanel({ submission }: { submission: ReportSubmission }) {
               value={extractedNric}
               onChange={(e) => setExtractedNric(e.target.value)}
               placeholder="NRIC"
+              className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="pt-2">
+          <label className="block text-xs font-medium text-neutral-600">
+            Referring doctor — name is read from the report&apos;s &quot;Referred By&quot; field
+            if present; email isn&apos;t printed on the report, so enter it manually to enable
+            sending the finished report directly to the doctor.
+          </label>
+          <div className="mt-1.5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <input
+              name="referring_doctor_name"
+              value={referringDoctorName}
+              onChange={(e) => setReferringDoctorName(e.target.value)}
+              placeholder="Referring doctor name"
+              className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm"
+            />
+            <input
+              name="referring_doctor_email"
+              type="email"
+              value={referringDoctorEmail}
+              onChange={(e) => setReferringDoctorEmail(e.target.value)}
+              placeholder="Referring doctor email"
               className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm"
             />
           </div>
@@ -307,6 +341,32 @@ export function AiDraftPanel({ submission }: { submission: ReportSubmission }) {
               <p className="mt-1 text-xs text-amber-600">
                 Draft is unreviewed — approve or edit it above before sending this PDF to the customer.
               </p>
+            )}
+
+            {submission.generated_pdf_url && referringDoctorEmail && (
+              <div className="mt-3 border-t border-neutral-100 pt-3">
+                <button
+                  disabled={isSendingToDoctor}
+                  onClick={() => {
+                    setDoctorSendError(null);
+                    setDoctorSendSuccess(false);
+                    startSendingToDoctor(async () => {
+                      const result = await sendReferringDoctorReportAction(submission.id);
+                      if (result.error) setDoctorSendError(result.error);
+                      else setDoctorSendSuccess(true);
+                    });
+                  }}
+                  className="rounded-md border border-teal-700 text-teal-700 px-3 py-1.5 text-xs font-semibold hover:bg-teal-50 disabled:opacity-60"
+                >
+                  {isSendingToDoctor
+                    ? "Sending…"
+                    : `Send report to ${referringDoctorName || "referring doctor"}`}
+                </button>
+                {doctorSendSuccess && (
+                  <p className="mt-1 text-xs text-teal-700">✓ Sent to {referringDoctorEmail}.</p>
+                )}
+                {doctorSendError && <p className="mt-1 text-xs text-red-600">{doctorSendError}</p>}
+              </div>
             )}
           </div>
         </div>

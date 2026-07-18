@@ -135,6 +135,61 @@ export async function sendPaymentRequestEmail(opts: {
   return data;
 }
 
+export function referringDoctorReportEmailHtml({
+  doctorName,
+  customerName,
+  referenceCode,
+  pdfUrl,
+}: {
+  doctorName: string;
+  customerName: string;
+  referenceCode: string;
+  pdfUrl: string;
+}): string {
+  return `
+  <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1F2937;">
+    <p style="color:#0F766E; font-weight:600; margin-bottom: 4px;">Health Bridge Solution</p>
+    <h2 style="margin-top: 0;">Health report for your patient, ${doctorName}</h2>
+    <p>
+      Your patient <strong>${customerName}</strong> asked us to share their plain-language health summary
+      (reference <strong>${referenceCode}</strong>) with you, as the referring doctor for this test.
+    </p>
+    <p>
+      <a href="${pdfUrl}" style="display:inline-block; background:#0F766E; color:#fff; padding:12px 20px; border-radius:8px; text-decoration:none; font-weight:600;">
+        Download the report
+      </a>
+    </p>
+    <p style="color:#6B7280; font-size: 14px;">
+      This is an educational summary generated to help the patient understand their results in plain language —
+      not a substitute for your own clinical review of the underlying lab report.
+    </p>
+    <p style="color:#9CA3AF; font-size: 12px; margin-top: 32px;">
+      Health Bridge Solution
+    </p>
+  </div>`;
+}
+
+export async function sendReferringDoctorReportEmail(opts: {
+  to: string;
+  doctorName: string;
+  customerName: string;
+  referenceCode: string;
+  pdfUrl: string;
+}) {
+  const resend = getClient();
+  const html = referringDoctorReportEmailHtml(opts);
+  const { data, error } = await resend.emails.send({
+    from: FROM_ADDRESS,
+    to: opts.to,
+    subject: `Health report for your patient (${opts.referenceCode})`,
+    html,
+  });
+  if (error) {
+    throw new Error(error.message || "Failed to send email");
+  }
+  return data;
+}
+
 const TEAM_NOTIFICATION_EMAIL = process.env.TEAM_NOTIFICATION_EMAIL || "mysovera@gmail.com";
 
 export function consultationRequestConfirmationHtml({

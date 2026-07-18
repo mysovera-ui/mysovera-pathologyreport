@@ -64,7 +64,7 @@ ${MARKERS_HEADER}
 ${HISTORY_HEADER}
 (clinical history summary goes here, or the single word "None" if there are no non-lab clinical documents)
 ${PATIENT_HEADER}
-(four patient-identity lines go here — see Section 3 instructions)
+(five patient-identity lines go here — see Section 3 instructions)
 
 === Section 1 — ${MARKERS_HEADER} ===
 Find every lab test result on any lab-report pages and output them as plain "Parameter: value" lines, one per line. No headings, no commentary, no markdown, no bullet points.
@@ -97,18 +97,20 @@ If any of the pages are a hospital discharge summary, clinic letter, or imaging 
 Keep it factual and attributed to the source document (e.g. "Per discharge summary from [hospital]: ..."), not your own medical opinion. Do not invent details that aren't on the page. If there are no such documents among the pages, output exactly "None" for this section.
 
 === Section 3 — ${PATIENT_HEADER} ===
-Look at the patient identification area printed on the document (usually near the top of a lab report, alongside the lab/clinic letterhead — fields like NAME, AGE/GENDER, DOB, NRIC). Output exactly four lines, in this exact format:
+Look at the patient identification area printed on the document (usually near the top of a lab report, alongside the lab/clinic letterhead — fields like NAME, AGE/GENDER, DOB, NRIC, REFERRED BY). Output exactly five lines, in this exact format:
 Full Name: <name exactly as printed, or Unknown>
 Age: <age in whole years as a plain integer, or Unknown>
 Gender: <Male or Female, or Unknown>
 NRIC: <the Malaysian NRIC/IC number exactly as printed, digits only or with dashes, or Unknown>
-Only transcribe what is explicitly printed on the document itself — never guess or infer a field from another (e.g. don't guess gender from the name). If age is only given as "55 years 2 months", output just the whole-year integer 55. If a field is missing, unclear, or you're not confident, output Unknown for that line rather than guessing.`;
+Referring Doctor: <the referring doctor's name exactly as printed next to a "Referred By"/"Doctor"/"Physician" field, including any "Dr." prefix, or Unknown>
+Only transcribe what is explicitly printed on the document itself — never guess or infer a field from another (e.g. don't guess gender from the name). If age is only given as "55 years 2 months", output just the whole-year integer 55. The referring doctor is whoever ordered/requested the test, not the lab's own staff or the report's signatory pathologist. If a field is missing, unclear, or you're not confident, output Unknown for that line rather than guessing.`;
 
 export interface PatientInfo {
   fullName: string | null;
   age: number | null;
   gender: string | null;
   nric: string | null;
+  referringDoctor: string | null;
 }
 
 export interface ExtractResult {
@@ -123,11 +125,13 @@ function parsePatientInfo(section: string): PatientInfo {
   const ageMatch = section.match(/Age:\s*(.*)/i);
   const genderMatch = section.match(/Gender:\s*(.*)/i);
   const nricMatch = section.match(/NRIC:\s*(.*)/i);
+  const referringDoctorMatch = section.match(/Referring Doctor:\s*(.*)/i);
   return {
     fullName: normalizeFullName(nameMatch?.[1]),
     age: normalizeAge(ageMatch?.[1]),
     gender: normalizeGender(genderMatch?.[1]),
     nric: normalizeNric(nricMatch?.[1]),
+    referringDoctor: normalizeFullName(referringDoctorMatch?.[1]),
   };
 }
 

@@ -18,6 +18,7 @@ export type ExtractActionState = {
   extractedAge?: number | null;
   extractedGender?: string | null;
   extractedNric?: string | null;
+  extractedReferringDoctor?: string | null;
   filesProcessed?: number;
 };
 
@@ -62,6 +63,7 @@ export async function extractMarkersAction(submissionId: string): Promise<Extrac
       extracted_age: result.patientInfo.age,
       extracted_gender: result.patientInfo.gender,
       extracted_nric: result.patientInfo.nric,
+      referring_doctor_name: result.patientInfo.referringDoctor,
     })
     .eq("id", submissionId);
 
@@ -85,6 +87,7 @@ export async function extractMarkersAction(submissionId: string): Promise<Extrac
     extractedAge: result.patientInfo.age,
     extractedGender: result.patientInfo.gender,
     extractedNric: result.patientInfo.nric,
+    extractedReferringDoctor: result.patientInfo.referringDoctor,
     filesProcessed: result.filesProcessed,
   };
 }
@@ -100,6 +103,9 @@ export async function generateAiDraftAction(
   const extractedAge = normalizeAge(String(formData.get("extracted_age") || ""));
   const extractedGender = normalizeGender(String(formData.get("extracted_gender") || ""));
   const extractedNric = normalizeNric(String(formData.get("extracted_nric") || ""));
+  const referringDoctorName = normalizeFullName(String(formData.get("referring_doctor_name") || ""));
+  const referringDoctorEmailRaw = String(formData.get("referring_doctor_email") || "").trim();
+  const referringDoctorEmail = referringDoctorEmailRaw && referringDoctorEmailRaw.includes("@") ? referringDoctorEmailRaw : null;
 
   if (!markerInput) {
     return { error: "Please enter at least one marker value." };
@@ -139,6 +145,8 @@ export async function generateAiDraftAction(
       extracted_age: extractedAge,
       extracted_gender: extractedGender,
       extracted_nric: extractedNric,
+      referring_doctor_name: referringDoctorName,
+      referring_doctor_email: referringDoctorEmail,
       // Regenerating the draft invalidates any previously generated PDF —
       // the coach should regenerate the PDF from the fresh draft.
       generated_pdf_url: null,
