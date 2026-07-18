@@ -10,6 +10,10 @@
 - `lint`: `next lint`
 - `start`: `next start`
 
+## Architecture
+
+- Report package now has tiered structure (Basic/Standard/Premium) with tier-based billing implementation
+
 ## Notes
 
 - Referring doctor email feature has been added to the codebase
