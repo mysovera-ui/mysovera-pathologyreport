@@ -22,44 +22,16 @@ export default async function DashboardPage() {
   return (
     <main className="min-h-screen bg-neutral-50 py-12 px-6">
       <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <Link href="/" className="text-sm text-teal-700 hover:underline">
-              ← Home
-            </Link>
-            <h1 className="mt-2 text-2xl font-bold text-neutral-900">
-              Team dashboard
-            </h1>
-            <p className="text-sm text-neutral-500">
-              All report submissions, newest first.
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <Link
-              href="/dashboard/feedback"
-              className="text-sm font-medium text-teal-700 hover:underline whitespace-nowrap"
-            >
-              View customer feedback →
-            </Link>
-            <Link
-              href="/dashboard/follow-ups"
-              className="text-sm font-medium text-teal-700 hover:underline whitespace-nowrap"
-            >
-              Follow-up requests →
-            </Link>
-            <Link
-              href="/dashboard/consultations"
-              className="text-sm font-medium text-teal-700 hover:underline whitespace-nowrap"
-            >
-              Consultation requests →
-            </Link>
-            <Link
-              href="/dashboard/analytics"
-              className="text-sm font-medium text-teal-700 hover:underline whitespace-nowrap"
-            >
-              Analytics →
-            </Link>
-          </div>
+        <div className="mb-6">
+          <Link href="/" className="text-sm text-teal-700 hover:underline">
+            ← Home
+          </Link>
+          <h1 className="mt-2 text-2xl font-bold text-neutral-900">
+            Team dashboard
+          </h1>
+          <p className="text-sm text-neutral-500">
+            All report submissions, newest first.
+          </p>
         </div>
 
         {error && (

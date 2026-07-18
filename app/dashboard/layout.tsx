@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { logoutAction } from "@/app/login/actions";
+import { DashboardNav } from "./dashboard-nav";
 
 export default async function DashboardLayout({
   children,
@@ -30,16 +30,9 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-end gap-3 border-b border-neutral-200 bg-white px-6 py-2 text-xs text-neutral-500">
-        <span>{user.email}</span>
-        <form action={logoutAction}>
-          <button type="submit" className="text-teal-700 hover:underline">
-            Sign out
-          </button>
-        </form>
-      </div>
-      {children}
+    <div className="min-h-screen bg-neutral-50">
+      <DashboardNav email={user.email ?? ""} />
+      <div className="md:pl-60">{children}</div>
     </div>
   );
 }

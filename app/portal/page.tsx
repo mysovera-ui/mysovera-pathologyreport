@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_STYLES, PAYMENT_STYLES, formatDate } from "@/lib/db/format";
 import { TIER_LABELS } from "@/lib/billplz/pricing";
-import { portalLogoutAction } from "./actions";
 import type { ReportTier } from "@/lib/db/types";
 
 export const dynamic = "force-dynamic";
@@ -46,20 +45,9 @@ export default async function PortalPage() {
   return (
     <main className="min-h-screen bg-neutral-50 py-12 px-6">
       <div className="max-w-3xl mx-auto">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <p className="text-sm font-medium text-teal-700">Health Bridge Solution</p>
-            <h1 className="mt-1 text-2xl font-bold text-neutral-900">My reports</h1>
-            <p className="text-sm text-neutral-500">Signed in as {user.email}</p>
-          </div>
-          <form action={portalLogoutAction}>
-            <button
-              type="submit"
-              className="text-sm text-neutral-500 hover:text-neutral-700 hover:underline"
-            >
-              Sign out
-            </button>
-          </form>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-neutral-900">My reports</h1>
+          <p className="text-sm text-neutral-500">Signed in as {user.email}</p>
         </div>
 
         {rows.length === 0 && (
