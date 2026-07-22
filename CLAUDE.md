@@ -1,4 +1,4 @@
-# mysovera-pathologyreport
+# HealthLens
 
 <!-- Managed by Launchpad. Edits here may be overwritten on next sync. -->
 

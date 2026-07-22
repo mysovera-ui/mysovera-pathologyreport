@@ -4,7 +4,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage title="Privacy Policy" lastUpdated="10 July 2026">
       <p>
-        Health Bridge Solution (&ldquo;mysovera&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;) provides plain-language
+        HealthLens (&ldquo;mysovera&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;) provides plain-language
         summaries of lab/pathology reports. This policy explains what personal data we collect, why, and
         your rights under Malaysia&rsquo;s Personal Data Protection Act 2010 and its 2024 amendment
         (&ldquo;PDPA&rdquo;). It applies to anyone who submits a report through our site or is contacted by
@@ -99,7 +99,7 @@ export default function PrivacyPage() {
 
       <h2>9. Contact</h2>
       <p>
-        Health Bridge Solution — <a href="mailto:mysovera@gmail.com">mysovera@gmail.com</a>
+        HealthLens — <a href="mailto:mysovera@gmail.com">mysovera@gmail.com</a>
       </p>
 
       <p className="text-xs text-neutral-400 mt-8">

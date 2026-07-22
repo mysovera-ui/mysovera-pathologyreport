@@ -163,7 +163,7 @@ export function DashboardNav({ email }: { email: string }) {
         >
           <IconMenu className="h-5 w-5" />
         </button>
-        <span className="text-sm font-semibold text-teal-700">Health Bridge Solution</span>
+        <span className="text-sm font-semibold text-teal-700">HealthLens</span>
         <span className="w-8" aria-hidden />
       </div>
 
@@ -174,7 +174,7 @@ export function DashboardNav({ email }: { email: string }) {
           <div className="absolute inset-y-0 left-0 flex w-64 flex-col bg-white shadow-xl">
             <div className="flex items-center justify-between px-4 py-4">
               <div>
-                <p className="text-sm font-semibold text-teal-700">Health Bridge Solution</p>
+                <p className="text-sm font-semibold text-teal-700">HealthLens</p>
                 <p className="text-xs text-neutral-400">Staff dashboard</p>
               </div>
               <button
@@ -198,7 +198,7 @@ export function DashboardNav({ email }: { email: string }) {
       {/* Desktop fixed sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-neutral-200 bg-white md:flex">
         <div className="px-5 py-5">
-          <p className="text-sm font-semibold text-teal-700">Health Bridge Solution</p>
+          <p className="text-sm font-semibold text-teal-700">HealthLens</p>
           <p className="text-xs text-neutral-400">Staff dashboard</p>
         </div>
         <NavLinks pathname={pathname} />

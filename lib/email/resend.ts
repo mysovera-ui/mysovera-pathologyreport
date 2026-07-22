@@ -13,7 +13,7 @@ function getClient(): Resend {
   return new Resend(key);
 }
 
-const FROM_ADDRESS = process.env.RESEND_FROM_EMAIL || "Health Bridge Solution <report@healthbridgesolution.my>";
+const FROM_ADDRESS = process.env.RESEND_FROM_EMAIL || "HealthLens <report@healthbridgesolution.my>";
 
 export function deliveryEmailHtml({
   customerName,
@@ -33,7 +33,7 @@ export function deliveryEmailHtml({
   const firstName = customerName.split(" ")[0];
   return `
   <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1F2937;">
-    <p style="color:#0F766E; font-weight:600; margin-bottom: 4px;">Health Bridge Solution</p>
+    <p style="color:#0F766E; font-weight:600; margin-bottom: 4px;">HealthLens</p>
     <h2 style="margin-top: 0;">Your health report is ready, ${firstName}</h2>
     <p>Your plain-language health summary (reference <strong>${referenceCode}</strong>) has been reviewed and is ready for you.</p>
     <p>
@@ -55,7 +55,7 @@ export function deliveryEmailHtml({
       <a href="${feedbackUrl}" style="color:#0F766E;">let us know how we did</a>.
     </p>
     <p style="color:#9CA3AF; font-size: 12px; margin-top: 32px;">
-      Delivered by ${deliveredBy} · Health Bridge Solution
+      Delivered by ${deliveredBy} · HealthLens
     </p>
   </div>`;
 }
@@ -97,7 +97,7 @@ export function paymentRequestEmailHtml({
   const firstName = customerName.split(" ")[0];
   return `
   <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1F2937;">
-    <p style="color:#0F766E; font-weight:600; margin-bottom: 4px;">Health Bridge Solution</p>
+    <p style="color:#0F766E; font-weight:600; margin-bottom: 4px;">HealthLens</p>
     <h2 style="margin-top: 0;">Your health report is reviewed and ready, ${firstName}</h2>
     <p>Your plain-language health summary (reference <strong>${referenceCode}</strong>) has been reviewed by our team. Complete payment of <strong>${amountLabel}</strong> to receive your report by email.</p>
     <p>
@@ -109,7 +109,7 @@ export function paymentRequestEmailHtml({
       Payment is processed securely via Billplz. Once payment is confirmed, your report will be sent to this email address automatically.
     </p>
     <p style="color:#9CA3AF; font-size: 12px; margin-top: 32px;">
-      Health Bridge Solution
+      HealthLens
     </p>
   </div>`;
 }
@@ -148,7 +148,7 @@ export function referringDoctorReportEmailHtml({
 }): string {
   return `
   <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1F2937;">
-    <p style="color:#0F766E; font-weight:600; margin-bottom: 4px;">Health Bridge Solution</p>
+    <p style="color:#0F766E; font-weight:600; margin-bottom: 4px;">HealthLens</p>
     <h2 style="margin-top: 0;">Health report for your patient, ${doctorName}</h2>
     <p>
       Your patient <strong>${customerName}</strong> asked us to share their plain-language health summary
@@ -164,7 +164,7 @@ export function referringDoctorReportEmailHtml({
       not a substitute for your own clinical review of the underlying lab report.
     </p>
     <p style="color:#9CA3AF; font-size: 12px; margin-top: 32px;">
-      Health Bridge Solution
+      HealthLens
     </p>
   </div>`;
 }
@@ -204,7 +204,7 @@ export function consultationRequestConfirmationHtml({
   const firstName = customerName.split(" ")[0];
   return `
   <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1F2937;">
-    <p style="color:#0F766E; font-weight:600; margin-bottom: 4px;">Health Bridge Solution</p>
+    <p style="color:#0F766E; font-weight:600; margin-bottom: 4px;">HealthLens</p>
     <h2 style="margin-top: 0;">We've got your request, ${firstName}</h2>
     <p>
       Thanks for requesting a <strong>${consultationType}</strong> consultation (reference <strong>${referenceCode}</strong>).
@@ -214,7 +214,7 @@ export function consultationRequestConfirmationHtml({
       This is a request, not a confirmed booking yet — a real person from our team will follow up with you directly.
     </p>
     <p style="color:#9CA3AF; font-size: 12px; margin-top: 32px;">
-      Health Bridge Solution
+      HealthLens
     </p>
   </div>`;
 }

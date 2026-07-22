@@ -48,7 +48,7 @@ export async function sendDeliveryEmailAction(submissionId: string): Promise<Ema
       customerName: submission.customer_name,
       referenceCode: submission.reference_code,
       pdfUrl: delivery.pdf_url,
-      deliveredBy: delivery.delivered_by || "Health Bridge Solution",
+      deliveredBy: delivery.delivered_by || "HealthLens",
       feedbackUrl,
       consultationUrl,
     });

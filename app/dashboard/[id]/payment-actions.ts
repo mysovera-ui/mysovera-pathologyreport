@@ -42,7 +42,7 @@ export async function sendPaymentLinkAction(submissionId: string): Promise<Payme
         name: submission.customer_name,
         email: submission.email,
         amountCents,
-        description: `Health Bridge Solution report (${submission.reference_code})`,
+        description: `HealthLens report (${submission.reference_code})`,
         referenceCode: submission.reference_code,
         callbackUrl: `${appUrl}/api/billplz/callback`,
         redirectUrl: `${appUrl}/payment-complete?ref=${submission.reference_code}`,

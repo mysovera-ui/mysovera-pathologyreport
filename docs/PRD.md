@@ -4,7 +4,7 @@
 People receive blood test and lab reports but cannot interpret the numbers. Medical jargon causes confusion and anxiety. They need a plain-language explanation — not a diagnosis — to feel informed before speaking to their doctor.
 
 ## Target User
-Adults 35+ who have recently completed a blood test. Primary concerns: cholesterol, blood sugar (HbA1c), liver, kidney, thyroid, inflammation, or full blood count. Secondary user: the Health Bridge Solution team who processes and delivers reports.
+Adults 35+ who have recently completed a blood test. Primary concerns: cholesterol, blood sugar (HbA1c), liver, kidney, thyroid, inflammation, or full blood count. Secondary user: the HealthLens team who processes and delivers reports.
 
 ## Core Objects
 - **Report Submission** — customer record + uploaded file + status

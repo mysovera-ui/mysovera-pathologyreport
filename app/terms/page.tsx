@@ -4,7 +4,7 @@ export default function TermsPage() {
   return (
     <LegalPage title="Terms of Service" lastUpdated="10 July 2026">
       <p>
-        These terms govern your use of the Health Bridge Solution (&ldquo;mysovera&rdquo;) report service.
+        These terms govern your use of the HealthLens (&ldquo;mysovera&rdquo;) report service.
         By submitting a report through our site, you agree to them.
       </p>
 
@@ -54,12 +54,12 @@ export default function TermsPage() {
       <h2>6. Intellectual property</h2>
       <p>
         The report we prepare for you is for your personal use. Our branding, templates, and the underlying
-        analysis methodology remain the property of Health Bridge Solution.
+        analysis methodology remain the property of HealthLens.
       </p>
 
       <h2>7. Limitation of liability</h2>
       <p>
-        To the fullest extent permitted by Malaysian law, Health Bridge Solution is not liable for any
+        To the fullest extent permitted by Malaysian law, HealthLens is not liable for any
         decision made, or harm suffered, based on the report, since it is an educational summary and not
         medical advice. Nothing in these terms limits any liability that cannot lawfully be limited.
       </p>
@@ -75,7 +75,7 @@ export default function TermsPage() {
 
       <h2>10. Contact</h2>
       <p>
-        Health Bridge Solution — <a href="mailto:mysovera@gmail.com">mysovera@gmail.com</a>
+        HealthLens — <a href="mailto:mysovera@gmail.com">mysovera@gmail.com</a>
       </p>
 
       <p className="text-xs text-neutral-400 mt-8">

@@ -3,7 +3,7 @@ import "./globals.css";
 import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
-  title: "mysovera — Health Bridge Solution",
+  title: "mysovera — HealthLens",
   description: "Understand your lab report in plain language.",
 };
 

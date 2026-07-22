@@ -30,7 +30,7 @@ export default async function PaymentCompletePage({
 
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center px-6 text-center">
-      <p className="mb-2 text-sm font-semibold text-teal-700">Health Bridge Solution</p>
+      <p className="mb-2 text-sm font-semibold text-teal-700">HealthLens</p>
       {paid ? (
         <>
           <h1 className="text-2xl font-bold text-neutral-900">Payment received</h1>

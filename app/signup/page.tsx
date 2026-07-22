@@ -13,7 +13,7 @@ export default function SignupPage() {
     <main className="min-h-screen bg-neutral-50 flex items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <p className="text-sm font-medium text-teal-700 mb-2 text-center">
-          Health Bridge Solution
+          HealthLens
         </p>
         <h1 className="text-2xl font-bold text-neutral-900 text-center mb-6">
           Create staff account

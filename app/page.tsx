@@ -14,7 +14,7 @@ export default function Home() {
     <main className="min-h-screen bg-neutral-50">
       <section className="max-w-3xl mx-auto px-6 pt-20 pb-12 text-center">
         <p className="text-sm font-medium text-teal-700 mb-3">
-          Health Bridge Solution
+          HealthLens
         </p>
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-neutral-900">
           Understand your blood test results in plain English
