@@ -10,6 +10,10 @@
 - `lint`: `next lint`
 - `start`: `next start`
 
+## Decisions
+
+- Navigation UI pattern: left nav + hamburger menu added to both dashboard and customer portal
+
 ## Architecture
 
 - Report package now has tiered structure (Basic/Standard/Premium) with tier-based billing implementation
